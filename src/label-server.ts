@@ -55,7 +55,7 @@ async function createLabel({ name, description }: Label) {
       locales: [{ lang: "en", description, name }],
     },
   ]);
-  console.log(`Created label ${identifier}`);
+  console.log(`Created label ${identifier}!`);
 }
 
 export const addUserLabel = async (did: string, label: Label) => {
