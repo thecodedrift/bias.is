@@ -13,6 +13,10 @@ server.start(PORT, (error, address) => {
   else console.log(`Labeler server listening on ${address}`);
 });
 
+setInterval(() => {
+  console.log("...");
+}, 5000);
+
 const credentials = {
   identifier: DID,
   password: process.env.LABELER_PASSWORD!,
