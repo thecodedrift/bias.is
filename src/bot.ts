@@ -196,7 +196,10 @@ bot.on("message", async (message: ChatMessage) => {
 
     await addUserLabel(message.senderDid, {
       name: input,
-      description: targetRepo?.data.description || "",
+      description: dedent`
+        ${targetRepo?.data.description || ""}
+        ${targetRepo.data.html_url}
+      `,
     });
   }
 });
