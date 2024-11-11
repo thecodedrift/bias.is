@@ -122,7 +122,7 @@ export const getStoredSession = () => {
 export const setStoredSession = (session: Session) => {
   server.db
     .prepare(
-      `INSERT INTO session (uri, accessJwt, refreshJwt) VALUES (?, ?, ?)`
+      `INSERT OR REPLACE INTO session (uri, accessJwt, refreshJwt) VALUES (?, ?, ?)`
     )
     .run(DID, session.accessJwt, session.refreshJwt);
 };
