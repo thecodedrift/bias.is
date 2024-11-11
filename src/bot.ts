@@ -95,7 +95,19 @@ async function verifyUser(message: ChatMessage, conversation: Conversation) {
     return;
   }
 
-  const socials = await octokit.users.listSocialAccountsForUser({ username });
+  const [socialErr, socials] = await to(
+    octokit.users.listSocialAccountsForUser({ username })
+  );
+
+  if (socialErr) {
+    await conversation.sendMessage({
+      text: dedent`
+        Something went wrong getting your social accounts. Please try again.
+      `,
+    });
+    return;
+  }
+
   const listedBlueskyHandle = socials.data.find(
     (account) => account.provider === "bluesky"
   );
@@ -225,15 +237,26 @@ async function addRepoLabelForUser(
       text: dedent`
           Success! You own the ${input} repo. And qualified for the label.
           
-          > Note: It will take a few seconds for the label to be appear.
+          > Note: It can take a few minutes for the label to be appear.
         `,
     });
   } else {
-    const { data: mergedPrs } = await octokit.search.issuesAndPullRequests({
-      q: `repo:${input} author:${githubUsername} is:merged`,
-    });
+    const [searchErr, mergedPrs] = await to(
+      octokit.search.issuesAndPullRequests({
+        q: `repo:${input} author:${githubUsername} is:merged`,
+      })
+    );
 
-    if (mergedPrs.items.length === 0) {
+    if (searchErr) {
+      await conversation.sendMessage({
+        text: dedent`
+          Something went wrong searching GitHub for merged PRs. Please try again.
+        `,
+      });
+      return;
+    }
+
+    if (mergedPrs.data.items.length === 0) {
       await conversation.sendMessage({
         text: dedent`
             You have not merged any PRs to the repo so we cannot add the label.
@@ -245,7 +268,7 @@ async function addRepoLabelForUser(
         text: dedent`
             Success! You contributed to ${input}. And qualified for the label.
             
-            > Note: It will take a few seconds for the label to be appear.
+            > Note: It can take a few minutes for the label to be appear.
           `,
       });
     }

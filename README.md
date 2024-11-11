@@ -16,5 +16,9 @@ Setup Instructions:
 2. Subscribe to the labeler
 3. Like the labeler
 
-All steps required. #3 starts sends a DM to continue setup
+All steps required. #3 sends a DM to continue setup
 ```
+
+## Todo
+
+- better messaging for when the limit is reached
