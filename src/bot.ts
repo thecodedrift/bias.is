@@ -34,6 +34,7 @@ if (session) {
       did: DID,
       handle: HANDLE,
     });
+    console.log("Resumed session");
   } catch (err) {
     console.error(err);
     session = null;
@@ -47,6 +48,7 @@ if (!session) {
   });
 
   setStoredSession(session);
+  console.log("Logged in");
 }
 
 await bot.setChatPreference(IncomingChatPreference.All);
