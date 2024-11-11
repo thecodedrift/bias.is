@@ -139,7 +139,7 @@ async function verifyUser(message: ChatMessage, conversation: Conversation) {
     text: dedent`
       ${SUCCESS_MESSAGE}
 
-      To link github repo send a message like the follow. We will confirm you are a collaborator on the repo.
+      To link github repo send a message like the following. We will confirm you are a collaborator on the repo.
 
       repo: your-username/your-repo
 
