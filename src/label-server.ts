@@ -114,9 +114,11 @@ export const getStoredSession = () => {
     )
     .run();
 
-  return server.db
-    .prepare<string[]>(`SELECT * FROM session WHERE uri = ?`)
-    .get(DID) as unknown as Session | null;
+  // TODO: https://github.com/skyware-js/bot/issues/16
+  return null as Session | null;
+  // return server.db
+  //   .prepare<string[]>(`SELECT * FROM session WHERE uri = ?`)
+  //   .get(DID) as unknown as Session | null;
 };
 
 export const setStoredSession = (session: Session) => {
