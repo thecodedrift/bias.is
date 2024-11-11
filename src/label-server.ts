@@ -100,3 +100,29 @@ export const clearUserLabels = async (did: string) => {
     console.error(err);
   }
 };
+
+interface Session {
+  accessJwt: string;
+  refreshJwt: string;
+}
+
+export const getStoredSession = () => {
+  // initialize session table if it doesn't exist
+  server.db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS session (uri TEXT PRIMARY KEY, accessJwt TEXT, refreshJwt TEXT)`
+    )
+    .run();
+
+  return server.db
+    .prepare<string[]>(`SELECT * FROM session WHERE uri = ?`)
+    .get(DID) as unknown as Session | null;
+};
+
+export const setStoredSession = (session: Session) => {
+  server.db
+    .prepare(
+      `INSERT INTO session (uri, accessJwt, refreshJwt) VALUES (?, ?, ?)`
+    )
+    .run(DID, session.accessJwt, session.refreshJwt);
+};

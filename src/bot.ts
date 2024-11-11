@@ -8,7 +8,13 @@ import {
 import dedent from "dedent";
 import { to } from "await-to-js";
 import { octokit } from "./octokit.js";
-import { addUserLabel, clearUserLabels } from "./label-server.js";
+import {
+  addUserLabel,
+  clearUserLabels,
+  getStoredSession,
+  setStoredSession,
+} from "./label-server.js";
+import { DID, HANDLE } from "./constants.js";
 
 const SUCCESS_MESSAGE = "Success! We've verified your GitHub account.";
 
@@ -16,10 +22,32 @@ const bot = new Bot({
   emitChatEvents: true,
 });
 
-await bot.login({
-  identifier: process.env.DID!,
-  password: process.env.LABELER_PASSWORD!,
-});
+let session = getStoredSession();
+
+if (session) {
+  try {
+    await bot.resumeSession({
+      accessJwt: session.accessJwt,
+      refreshJwt: session.refreshJwt,
+      active: true,
+      did: DID,
+      handle: HANDLE,
+    });
+  } catch (err) {
+    console.error(err);
+    session = null;
+  }
+}
+
+if (!session) {
+  const session = await bot.login({
+    identifier: process.env.DID!,
+    password: process.env.LABELER_PASSWORD!,
+  });
+
+  setStoredSession(session);
+}
+
 await bot.setChatPreference(IncomingChatPreference.All);
 
 bot.on("like", async ({ subject, user }) => {
