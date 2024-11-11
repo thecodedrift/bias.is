@@ -2,6 +2,7 @@ import {
   Bot,
   ChatMessage,
   Conversation,
+  DeletedChatMessage,
   IncomingChatPreference,
   Labeler,
 } from "@skyware/bot";
@@ -81,7 +82,7 @@ bot.on("like", async ({ subject, user }) => {
 });
 
 async function verifyUser(message: ChatMessage, conversation: Conversation) {
-  const username = message.text.split(":")[1].trim();
+  const username = (message.text.split(":")[1] || "").trim();
 
   if (!username) {
     await conversation.sendMessage({
@@ -145,31 +146,68 @@ async function verifyUser(message: ChatMessage, conversation: Conversation) {
   });
 }
 
+async function findGithubUsername(conversation: Conversation) {
+  let cursor: string | undefined | null = null;
+  let messages: Array<ChatMessage | DeletedChatMessage> = [];
+  let confirmMessageIndex = -1;
+
+  while (confirmMessageIndex === -1 && cursor !== undefined) {
+    ({ messages, cursor } = await conversation.getMessages(
+      cursor || undefined
+    ));
+
+    confirmMessageIndex = messages.findIndex(
+      (message) =>
+        message instanceof ChatMessage &&
+        message.text.startsWith(SUCCESS_MESSAGE)
+    );
+  }
+
+  if (confirmMessageIndex === -1) {
+    let previousMessage = messages[confirmMessageIndex + 1];
+
+    // If the success message is the last message, we need to fetch more
+    if (!previousMessage) {
+      ({ messages, cursor } = await conversation.getMessages(
+        cursor || undefined
+      ));
+      previousMessage = messages[0];
+    }
+
+    if (!previousMessage || !(previousMessage instanceof ChatMessage)) {
+      await conversation.sendMessage({
+        text: dedent`
+          Something went wrong. Please try again.
+        `,
+      });
+      return;
+    }
+
+    return (previousMessage.text.split(":")[1] || "").trim();
+  }
+}
+
 async function addRepoLabelForUser(
   message: ChatMessage,
   conversation: Conversation
 ) {
-  // validate the user was confirmed in the conversation
-  // TODO: go back more than 100 messages
-  const { messages } = await conversation.getMessages();
-  const confirmedMessage = messages.findIndex(
-    (message) =>
-      message instanceof ChatMessage && message.text.startsWith(SUCCESS_MESSAGE)
-  );
-  const previousMessage = messages[confirmedMessage + 1];
+  const githubUsername = await findGithubUsername(conversation);
+  const input = (message.text.split(":")[1] || "").trim();
+  const [org, repo] = input.split("/");
 
-  if (!previousMessage || !(previousMessage instanceof ChatMessage)) {
+  if (!org) {
     await conversation.sendMessage({
-      text: dedent`
-          Something went wrong. Please try again.
-        `,
+      text: "Could not find the org name in the provided slug. Please try again.",
     });
     return;
   }
 
-  const githubUsername = previousMessage.text.split(":")[1].trim();
-  const input = message.text.split(":")[1].trim();
-  const [org, repo] = input.split("/");
+  if (!repo) {
+    await conversation.sendMessage({
+      text: "Could not find the repo name in the provided slug. Please try again.",
+    });
+    return;
+  }
 
   if (org === githubUsername) {
     await conversation.sendMessage({
