@@ -111,6 +111,8 @@ async function verifyUser(message: ChatMessage, conversation: Conversation) {
       To link github repo send a message like the follow. We will confirm you are a collaborator on the repo.
 
       repo: your-username/your-repo
+
+      > Note: Only public repos are supported for now.
     `,
   });
 }
