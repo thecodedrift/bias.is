@@ -147,6 +147,8 @@ async function addRepoLabelForUser(
     await conversation.sendMessage({
       text: dedent`
           Success! You own the ${input} repo. And qualified for the label.
+          
+          > Note: It will take a few seconds for the label to be appear.
         `,
     });
   } else {
@@ -165,6 +167,8 @@ async function addRepoLabelForUser(
       await conversation.sendMessage({
         text: dedent`
             Success! You contributed to ${input}. And qualified for the label.
+            
+            > Note: It will take a few seconds for the label to be appear.
           `,
       });
     }
