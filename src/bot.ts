@@ -230,7 +230,7 @@ bot.on("message", async (message: ChatMessage) => {
           - "/reset" to clear all labels
           - "/help" to see these commands
 
-          If you want to see the source code or fix a bug check out the repo: https://github.com/bsky/github-labeler-bot
+          If you want to see the source code or fix a bug check out the repo: https://github.com/hipstersmoothie/github-labeler-bot
         `,
     });
   }
