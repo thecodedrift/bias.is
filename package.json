@@ -17,7 +17,6 @@
     "@octokit/plugin-throttling": "^9.3.2",
     "@octokit/rest": "^21.0.2",
     "@skyware/bot": "^0.3.7",
-    "@skyware/jetstream": "^0.2.0",
     "@skyware/labeler": "^0.1.8",
     "await-to-js": "^3.0.0",
     "dedent": "^1.5.3",

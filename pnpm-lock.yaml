@@ -20,9 +20,6 @@ importers:
       '@skyware/bot':
         specifier: ^0.3.7
         version: 0.3.7
-      '@skyware/jetstream':
-        specifier: ^0.2.0
-        version: 0.2.0(@atcute/client@2.0.4)
       '@skyware/labeler':
         specifier: ^0.1.8
         version: 0.1.13
@@ -360,9 +357,6 @@ packages:
 
   '@skyware/jetstream@0.1.9':
     resolution: {integrity: sha512-87NGqRSmEYmvEuVY0DKZ2ZRbL72tExtDuV+PDvywYqukSp3F/it+9wnU5Xb/Is/pf+KSbd6lWvrnE31HgxJpJg==}
-
-  '@skyware/jetstream@0.2.0':
-    resolution: {integrity: sha512-nydEVe47fc3Cn9yLjk0Tos05pB4PYVOXno8RKlf0QguJUF48ASKx9xA4jUHqEI1dk2oHuHWoXpo9ic+RIgk6yw==}
 
   '@skyware/labeler@0.1.13':
     resolution: {integrity: sha512-VFnVpJ79oKUdP4ydPZLp6qqlXWJdxVlIEKp8JcYRfZybxt0gEGy+v3Rpzh5muf98FQNdi3eAjvt5d9YwM27Zvg==}
@@ -946,13 +940,6 @@ snapshots:
       - '@atcute/client'
     optional: true
 
-  '@skyware/jetstream@0.2.0(@atcute/client@2.0.4)':
-    dependencies:
-      '@atcute/bluesky': 1.0.8(@atcute/client@2.0.4)
-      partysocket: 1.0.2
-    transitivePeerDependencies:
-      - '@atcute/client'
-
   '@skyware/labeler@0.1.13':
     dependencies:
       '@atcute/bluesky': 1.0.8(@atcute/client@2.0.4)
@@ -1050,7 +1037,8 @@ snapshots:
       '@esbuild/win32-ia32': 0.23.1
       '@esbuild/win32-x64': 0.23.1
 
-  event-target-shim@6.0.2: {}
+  event-target-shim@6.0.2:
+    optional: true
 
   fast-content-type-parse@1.1.0: {}
 
@@ -1160,6 +1148,7 @@ snapshots:
   partysocket@1.0.2:
     dependencies:
       event-target-shim: 6.0.2
+    optional: true
 
   pino-abstract-transport@2.0.0:
     dependencies:
