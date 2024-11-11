@@ -80,7 +80,23 @@ export const addUserLabel = async (did: string, label: Label) => {
   }
 };
 
-// if (rkey.includes(DELETE)) {
-//   server.createLabels({ uri: did }, { negate: [...labels] });
-//   console.log(`${new Date().toISOString()} Deleted labels: ${did}`);
-// }
+export const clearUserLabels = async (did: string) => {
+  // Get the current labels for the did
+  const query = server.db
+    .prepare<string[]>(`SELECT * FROM labels WHERE uri = ?`)
+    .all(did) as ComAtprotoLabelDefs.Label[];
+
+  // make a set of the current labels
+  const labels = query.reduce((set, label) => {
+    if (!label.neg) set.add(label.val);
+    else set.delete(label.val);
+    return set;
+  }, new Set<string>());
+
+  try {
+    server.createLabels({ uri: did }, { negate: [...labels] });
+    console.log(`${new Date().toISOString()} Deleted labels: ${did}`);
+  } catch (err) {
+    console.error(err);
+  }
+};
