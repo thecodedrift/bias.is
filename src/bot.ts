@@ -165,7 +165,7 @@ async function findGithubUsername(conversation: Conversation) {
     );
   }
 
-  if (confirmMessageIndex === -1) {
+  if (confirmMessageIndex !== -1) {
     let previousMessage = messages[confirmMessageIndex + 1];
 
     // If the success message is the last message, we need to fetch more
@@ -194,6 +194,15 @@ async function addRepoLabelForUser(
   conversation: Conversation
 ) {
   const githubUsername = await findGithubUsername(conversation);
+  console.log("Found github username", githubUsername);
+
+  if (!githubUsername) {
+    await conversation.sendMessage({
+      text: "Could not find your GitHub username. Please try again.",
+    });
+    return;
+  }
+
   const input = (message.text.split(":")[1] || "").trim();
   const [org, repo] = input.split("/");
 
