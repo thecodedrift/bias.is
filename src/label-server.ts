@@ -17,10 +17,6 @@ server.app.listen({ port: PORT, host: "::" }, (error, address) => {
   else console.log(`Labeler server listening on ${address}`);
 });
 
-setInterval(() => {
-  console.log("...");
-}, 5000);
-
 const credentials = {
   identifier: DID,
   password: process.env.LABELER_PASSWORD!,
@@ -76,7 +72,7 @@ export const addUserLabel = async (did: string, label: Label) => {
 
   try {
     if (labels.size < MAXLABELS) {
-      console.log(server.createLabel({ uri: did, val: identifier }));
+      server.createLabel({ uri: did, val: identifier });
       console.log(`${new Date().toISOString()} Labeled ${did}: ${identifier}`);
     }
   } catch (err) {

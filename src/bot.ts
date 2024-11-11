@@ -150,24 +150,33 @@ bot.on("message", async (message: ChatMessage) => {
     const githubUsername = previousMessage.text.split(":")[1].trim();
     const input = message.text.split(":")[1].trim();
     const [org, repo] = input.split("/");
-    const { data: mergedPrs } = await octokit.search.issuesAndPullRequests({
-      q: `repo:${input} author:${githubUsername} is:merged`,
-    });
 
-    if (mergedPrs.items.length === 0) {
+    if (org === githubUsername) {
       await conversation.sendMessage({
         text: dedent`
-          You have not merged any PRs to the repo so we cannot add the label.
+          Success! You own the ${input} repo. And qualified for the label.
         `,
       });
-      return;
-    }
+    } else {
+      const { data: mergedPrs } = await octokit.search.issuesAndPullRequests({
+        q: `repo:${input} author:${githubUsername} is:merged`,
+      });
 
-    await conversation.sendMessage({
-      text: dedent`
-        Success! You contributed to ${input}. And qualified for the label.
-      `,
-    });
+      if (mergedPrs.items.length === 0) {
+        await conversation.sendMessage({
+          text: dedent`
+            You have not merged any PRs to the repo so we cannot add the label.
+          `,
+        });
+        return;
+      } else {
+        await conversation.sendMessage({
+          text: dedent`
+            Success! You contributed to ${input}. And qualified for the label.
+          `,
+        });
+      }
+    }
 
     const [repoErr, targetRepo] = await to(
       octokit.repos.get({
