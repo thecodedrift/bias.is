@@ -232,45 +232,48 @@ async function addRepoLabelForUser(
     return;
   }
 
-  if (org === githubUsername) {
+  const [searchErr, mergedPrs] = await to(
+    octokit.search.issuesAndPullRequests({
+      q: `repo:${input} author:${githubUsername} is:merged`,
+    })
+  );
+
+  if (searchErr) {
     await conversation.sendMessage({
       text: dedent`
-          Success! You own the ${input} repo. And qualified for the label.
-          
-          > Note: It can take a few minutes for the label to be appear.
-        `,
+        Something went wrong searching GitHub for merged PRs. Please try again.
+      `,
     });
-  } else {
-    const [searchErr, mergedPrs] = await to(
-      octokit.search.issuesAndPullRequests({
-        q: `repo:${input} author:${githubUsername} is:merged`,
-      })
-    );
+    return;
+  }
 
-    if (searchErr) {
+  if (mergedPrs.data.items.length === 0) {
+    try {
+      // As a last ditch effort, check if the user is a contributor to the repo via the public API
+      // We don't use the public API otherwise because there is no filtering.
+      const res = await fetch(
+        `https://api.github.com/repos/${input}/contributors?per_page=100`,
+        {
+          headers: {
+            Authorization: `token ${process.env.GITHUB_TOKEN}`,
+          },
+        }
+      );
+      const contributorList: { login: string }[] = await res.json();
+      const isTopContributor = contributorList.some(
+        (c) => c.login === githubUsername
+      );
+
+      if (!isTopContributor) {
+        throw new Error("You aren't a contributor to the repo");
+      }
+    } catch (err) {
       await conversation.sendMessage({
         text: dedent`
-          Something went wrong searching GitHub for merged PRs. Please try again.
+          You have not merged any PRs to the repo so we cannot add the label.
         `,
       });
       return;
-    }
-
-    if (mergedPrs.data.items.length === 0) {
-      await conversation.sendMessage({
-        text: dedent`
-            You have not merged any PRs to the repo so we cannot add the label.
-          `,
-      });
-      return;
-    } else {
-      await conversation.sendMessage({
-        text: dedent`
-            Success! You contributed to ${input}. And qualified for the label.
-            
-            > Note: It can take a few minutes for the label to be appear.
-          `,
-      });
     }
   }
 
@@ -296,6 +299,15 @@ async function addRepoLabelForUser(
         ${targetRepo?.data.description || ""}
         ${targetRepo.data.html_url}
       `,
+  });
+
+  const ownership = org === githubUsername ? "You own" : "You contributed to";
+  await conversation.sendMessage({
+    text: dedent`
+      Success! ${ownership} ${input}. And qualified for the label.
+      
+      > Note: It can take a few minutes for the label to be appear.
+    `,
   });
 }
 
