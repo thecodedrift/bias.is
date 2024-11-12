@@ -116,6 +116,8 @@ async function verifyUser(message: ChatMessage, conversation: Conversation) {
     await conversation.sendMessage({
       text: dedent`
         You must list your Bluesky handle in your GitHub profile.
+
+        When you edit your profile, make sure to use the special Bluesky field!
       `,
     });
     return;
