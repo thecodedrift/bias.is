@@ -323,11 +323,11 @@ bot.on("message", async (message: ChatMessage) => {
     return;
   }
 
-  if (message.text.startsWith("github:")) {
+  if (message.text.match(/^github:/i)) {
     await verifyUser(message, conversation);
-  } else if (message.text.startsWith("repo:")) {
+  } else if (message.text.match(/^repo:/i)) {
     await addRepoLabelForUser(message, conversation);
-  } else if (message.text.trim() === "/reset") {
+  } else if (message.text.trim().match(/^\/reset$/i)) {
     await clearUserLabels(message.senderDid);
     await conversation.sendMessage({
       text: "All labels have been cleared! It may take a few minutes for the changes to be reflected.",
