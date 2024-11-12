@@ -18,7 +18,3 @@ Setup Instructions:
 
 All steps required. #3 sends a DM to continue setup
 ```
-
-## Todo
-
-- better messaging for when the limit is reached

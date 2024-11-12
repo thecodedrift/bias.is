@@ -74,10 +74,13 @@ export const addUserLabel = async (did: string, label: Label) => {
     if (labels.size < MAXLABELS) {
       server.createLabel({ uri: did, val: identifier });
       console.log(`${new Date().toISOString()} Labeled ${did}: ${identifier}`);
+      return true;
     }
   } catch (err) {
     console.error(err);
   }
+
+  return false;
 };
 
 export const clearUserLabels = async (did: string) => {

@@ -295,7 +295,7 @@ async function addRepoLabelForUser(
     return;
   }
 
-  await addUserLabel(message.senderDid, {
+  const didAdd = await addUserLabel(message.senderDid, {
     name: input,
     description: dedent`
         ${targetRepo?.data.description || ""}
@@ -303,14 +303,24 @@ async function addRepoLabelForUser(
       `,
   });
 
-  const ownership = org === githubUsername ? "You own" : "You contributed to";
-  await conversation.sendMessage({
-    text: dedent`
-      Success! ${ownership} ${input}. And qualified for the label.
-      
-      > Note: It can take a few minutes for the label to be appear.
-    `,
-  });
+  if (didAdd) {
+    const ownership = org === githubUsername ? "You own" : "You contributed to";
+    await conversation.sendMessage({
+      text: dedent`
+        Success! ${ownership} ${input}. And qualified for the label.
+        
+        > Note: It can take a few minutes for the label to be appear.
+      `,
+    });
+  } else {
+    await conversation.sendMessage({
+      text: dedent`
+        You're at the limit of 4 labels! Please /reset if you want to add more.
+
+        > Note: Really only 2 labels looks aesthetically pleasing, don't flex too hard.
+      `,
+    });
+  }
 }
 
 bot.on("message", async (message: ChatMessage) => {
