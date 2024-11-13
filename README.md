@@ -4,8 +4,9 @@ This is based on the original [github-labeler](https://github.com/hipstersmoothi
 
 # Wayfinding
 
-- `src/label-server.ts`: Creates a server that bsky will make requests to for information about labeled content.
-- `src/bot.ts`: Creates a bot that will respond to messages from users.
+- `src/server.ts`: Entry point. Starts both a labeler service and the bot connection
+- `src/labeler.ts`: Creates a server that bsky will make requests to for information about labeled content
+- `src/bot.ts`: Creates a bot that will respond to messages from users
 
 Both are started via `tsx` to avoid an extra build step.
 

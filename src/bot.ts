@@ -19,7 +19,7 @@ import { en } from "./lang.js";
 import { kprofiles } from "./sources/kprofiles.com.js";
 import { help } from "./actions/help.js";
 import { reset } from "./actions/reset.js";
-import { stan } from "./actions/stan.js";
+import { add } from "./actions/add.js";
 import { ult } from "./actions/ult.js";
 
 const sources = [
@@ -29,7 +29,7 @@ const sources = [
 const actions = [
   help,
   reset,
-  stan,
+  add,
   ult
 ]
 
