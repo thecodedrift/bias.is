@@ -3,13 +3,13 @@ import {
   getLabelerLabelDefinitions,
   setLabelerLabelDefinitions,
 } from "@skyware/labeler/scripts";
-import { DID, PORT, MAXLABELS, SIGNING_KEY } from "./constants.js";
+import { DID, PORT, MAXLABELS, SIGNING_KEY, LABELER_PASSWORD, DB_PATH } from "./constants.js";
 import { LabelerServer } from "@skyware/labeler";
 
 const server = new LabelerServer({
   did: DID,
   signingKey: SIGNING_KEY,
-  dbPath: process.env.DB_PATH,
+  dbPath: DB_PATH,
 });
 
 server.app.listen({ port: PORT, host: "::" }, (error, address) => {
@@ -19,7 +19,7 @@ server.app.listen({ port: PORT, host: "::" }, (error, address) => {
 
 const credentials = {
   identifier: DID,
-  password: process.env.LABELER_PASSWORD!,
+  password: LABELER_PASSWORD,
 };
 
 interface Label {
