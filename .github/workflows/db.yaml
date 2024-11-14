@@ -1,0 +1,65 @@
+name: K-Pop Database Sync
+
+on:
+  schedule:
+    # 1am each day
+    - cron: '0 1 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prep output, create working directory
+        run: |
+          rm -f db/kpop.db
+          mkdir -p ./tmp
+          rm -f tmp/dump.sql
+      - uses: shogo82148/actions-setup-mysql@v1
+        with:
+          mysql-version: "8.0"
+          root-password: root
+      - run: mysql -uroot -proot -e 'SELECT version()'
+      - name: Install Python (for tools)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install Python tools
+        run: pipx install mysql-to-sqlite3
+      - name: Fetch Soridata DB Dump
+        run: |
+          if test -f "tmp/dbdownload.zip"; then
+            # Curl https://soridata.com/download.php with POST
+            # Post data includes the form data pass=12345
+            # The output is saved as tmp/dbdownload.zip
+            echo "Downloading file"
+            # curl -X POST \
+            #   -d "pass=${{ secrets.SORIDATA_PASS }}" \
+            #   -o tmp/dbdownload.zip \
+            #   https://soridata.com/download.php
+          else
+            echo "File already exists"
+          fi
+      - name: Unzip & Rename
+        run: |
+          # unzip the downloaded file & rename
+          unzip -n tmp/dbdownload.zip -d tmp/
+          sql_file=$(find tmp/ -name "*.sql" -print -quit)
+          mv "$sql_file" tmp/dump.sql
+      - name: Load Dump into MySQL
+        run: |
+          # load the mysql dumps
+          mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS kpop;'
+          mysql -uroot -proot kpop < tmp/dump.sql
+      - name: Extract key table only as sqlite
+        run: |
+          # Dump cleanly to sqlite using mysql2sqlite
+          mysql2sqlite \
+            --sqlite-file db/kpop.db \
+            --mysql-user root \
+            --mysql-password root \
+            --mysql-database kpop \
+            --mysql-tables app_kpop_group
+      - run: |
+          # verify the file is written
+          ls -l db/kpop.db
