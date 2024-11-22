@@ -13,7 +13,7 @@ export const help: Action = {
 
     conversation.sendMessage({
       text: sprintf(en.help, {
-        list
+        commands: list
       })
     })
   }
