@@ -9,7 +9,7 @@ export const help: Action = {
   async handler(message, conversation, options) {
     const actions = options?.getActions?.() ?? [];
 
-    const list = actions.map((action) => `${action.cmd} - ${action.description}`).join("\n")
+    const list = actions.filter(action => action.admin !== true).map((action) => `${action.cmd} - ${action.description}`).join("\n")
 
     conversation.sendMessage({
       text: sprintf(en.help, {

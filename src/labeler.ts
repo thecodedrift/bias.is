@@ -28,6 +28,9 @@ interface Label {
 }
 
 function getIdentifier(name: string) {
+  // TODO this is where future Jakob is gonna be sad
+  // 2NE1 becomes "two-ne-one"
+  // ref: https://github.com/hipstersmoothie/github-labeler-bot/blob/c08d551e9f10a03908619c73b9f0c51a4e5bd982/src/label-server.ts#L43
   return name.replace("/", "-");
 }
 

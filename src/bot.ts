@@ -21,6 +21,8 @@ import { help } from "./actions/help.js";
 import { reset } from "./actions/reset.js";
 import { add } from "./actions/add.js";
 import { ult } from "./actions/ult.js";
+import { admin } from "./actions/admin.js";
+import { list } from "./actions/list.js";
 
 const sources = [
   kprofiles
@@ -28,9 +30,11 @@ const sources = [
 
 const actions = [
   help,
-  reset,
   add,
-  ult
+  ult,
+  list,
+  reset,
+  admin
 ]
 
 const defaultAction = help;
@@ -107,11 +111,11 @@ bot.on("like", async ({ subject, user }) => {
 
 bot.on("message", async (message: ChatMessage) => {
   console.log(`Received message: ${message.text}`);
+  const isAdmin = ADMINS.includes(message.senderDid)
 
-  if (ADMINS.includes(message.senderDid)) {
-    // log the messahe to console
-    console.log(`Admin message: ${message.text}`);
-  }
+  const validActions = actions.filter(action => {
+    return !action.admin || isAdmin;
+  })
 
   const [err, conversation] = await to(
     bot.getConversationForMembers([message.senderDid])
@@ -123,7 +127,7 @@ bot.on("message", async (message: ChatMessage) => {
   }
 
   let handler = defaultAction.handler;
-  for (const action of actions) {
+  for (const action of validActions) {
     if (message.text.match(action.match)) {
       handler = action.handler;
       break;
@@ -131,7 +135,7 @@ bot.on("message", async (message: ChatMessage) => {
   }
 
   await handler(message, conversation, {
-    getActions: () => actions
+    getActions: () => validActions
   });
 
 });

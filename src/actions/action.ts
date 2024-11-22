@@ -12,5 +12,6 @@ export type Action = {
   match: RegExp;
   cmd: string;
   description: string;
+  admin?: boolean;
   handler: ActionHandler;
 };
