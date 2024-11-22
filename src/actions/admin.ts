@@ -14,8 +14,8 @@ export const admin: Action = {
       mode: sqlite3.OPEN_READONLY,
       driver: sqlite3.Database,
     });
-    const stmt = await db.prepare("SELECT * FROM labels WHERE did = ?", message.senderDid);
-    const rows = await stmt.run();
+    const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, message.senderDid);
+    const rows = await stmt.all();
     console.log(rows);
 
     await conversation.sendMessage({
