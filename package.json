@@ -6,7 +6,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "start": "tsx src/server.ts"
+    "start": "tsx src/server.ts",
+    "tsx": "tsx"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",

@@ -3,10 +3,10 @@ import dedent from "dedent";
 type LanguageStrings =
   | "welcome"
   | "list"
-  | "stanSuccess"
+  | "addSuccess"
   | "ultSuccess"
   | "ultOnlyOne"
-  | "stanMax"
+  | "addMax"
   | "resetSuccess"
   | "help";
 
@@ -18,31 +18,31 @@ export const en: Language = {
 
     Here's a list of commands to get started:
 
-    %(commands)
+    %(commands)s
   `.trim(),
   list: dedent`
     Here's the groups and individuals you stan, plus your current 💖 ult
   `,
-  stanSuccess: dedent`
-    Done! You're now stanning %(bias). It may take a few minutes to show up.
+  addSuccess: dedent`
+    Done! You're now following %(bias)s. It may take a few minutes to show up.
   `.trim(),
   ultSuccess: dedent`
-    💖 let's goooo~ %(bias) is now your ult. It may take a few minutes to show up.
+    💖 let's goooo~ %(bias)s is now your ult. It may take a few minutes to show up.
   `.trim(),
   ultOnlyOne: dedent`
     We have to keep the number of ults down or we'll be here all day. Use /reset to start over.
   `.trim(),
-  stanMax: dedent`
+  addMax: dedent`
     I want to list everyone too, but we have to limit somewhere~
   `,
   resetSuccess: dedent`
     Okay, we reset your stan & ult lists. This is who you had before:
 
-    %(list)
+    %(list)s
   `,
   help: dedent`
     For a refresher, here's the commands for bias.is
 
-    %(commands)
+    %(commands)s
   `,
 };
