@@ -24,18 +24,9 @@ import { ult } from "./actions/ult.js";
 import { admin } from "./actions/admin.js";
 import { list } from "./actions/list.js";
 
-const sources = [
-  kprofiles
-]
+const sources = [kprofiles];
 
-const actions = [
-  help,
-  add,
-  ult,
-  list,
-  reset,
-  admin
-]
+const actions = [help, add, ult, list, reset, admin];
 
 const defaultAction = help;
 
@@ -93,7 +84,6 @@ bot.on("like", async ({ subject, user }) => {
   });
 });
 
-
 // async function addRepoLabelForUser(
 //   message: ChatMessage,
 //   conversation: Conversation
@@ -111,11 +101,11 @@ bot.on("like", async ({ subject, user }) => {
 
 bot.on("message", async (message: ChatMessage) => {
   console.log(`Received message: ${message.text}`);
-  const isAdmin = ADMINS.includes(message.senderDid)
+  const isAdmin = ADMINS.includes(message.senderDid);
 
-  const validActions = actions.filter(action => {
+  const validActions = actions.filter((action) => {
     return !action.admin || isAdmin;
-  })
+  });
 
   const [err, conversation] = await to(
     bot.getConversationForMembers([message.senderDid])
@@ -134,8 +124,14 @@ bot.on("message", async (message: ChatMessage) => {
     }
   }
 
-  await handler(message, conversation, {
-    getActions: () => validActions
-  });
-
+  try {
+    await handler(message, conversation, {
+      getActions: () => validActions,
+    });
+  } catch (err) {
+    console.error(err);
+    await conversation.sendMessage({
+      text: "Encountered an error. Give us a moment to recover.",
+    });
+  }
 });
