@@ -14,7 +14,7 @@ import {
   getStoredSession,
   setStoredSession,
 } from "./labeler.js";
-import { DID, HANDLE, LABELER_PASSWORD } from "./constants.js";
+import { ADMINS, DID, HANDLE, LABELER_PASSWORD } from "./constants.js";
 import { en } from "./lang.js";
 import { kprofiles } from "./sources/kprofiles.com.js";
 import { help } from "./actions/help.js";
@@ -107,6 +107,11 @@ bot.on("like", async ({ subject, user }) => {
 
 bot.on("message", async (message: ChatMessage) => {
   console.log(`Received message: ${message.text}`);
+
+  if (ADMINS.includes(message.senderDid)) {
+    // log the messahe to console
+    console.log(`Admin message: ${message.text}`);
+  }
 
   const [err, conversation] = await to(
     bot.getConversationForMembers([message.senderDid])
