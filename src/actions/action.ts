@@ -1,11 +1,11 @@
 import { ChatMessage, Conversation } from "@skyware/bot";
 
-export type ActionHandler = (
+export type ActionHandler<TOptions = unknown> = (
   message: ChatMessage,
   conversation: Conversation,
   options?: {
     getActions?: () => Action[]
-  }
+  } & TOptions
 ) => Promise<void>;
 
 export type Action = {

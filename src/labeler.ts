@@ -6,7 +6,7 @@ import {
 import { DID, PORT, MAXLABELS, SIGNING_KEY, LABELER_PASSWORD, DB_PATH } from "./constants.js";
 import { LabelerServer } from "@skyware/labeler";
 
-const server = new LabelerServer({
+export const server = new LabelerServer({
   did: DID,
   signingKey: SIGNING_KEY,
   dbPath: DB_PATH,
