@@ -42,7 +42,10 @@ const subCommands: Record<string, AdminActionHandler> = {
           options.arguments.replace(/^"/, "").replace(/"$/, "")
         )
       : kpopdb.prepare(
-          `SELECT * from app_kpop_group where name like ? or alias like ? or fname like ?`,
+          `SELECT * from app_kpop_group where name like ? or fanclub like ? or alias like ? or fname like ?`,
+          `%${options.arguments}%`,
+          `%${options.arguments}%`,
+          `%${options.arguments}%`,
           `%${options.arguments}%`
         ));
 
