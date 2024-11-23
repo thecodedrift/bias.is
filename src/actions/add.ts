@@ -6,5 +6,8 @@ export const add: Action = {
   description: "Add a group or idol as a label",
   async handler(message, conversation) {
     // TODO
+    await conversation.sendMessage({
+      text: "I know you're eager, but we're still building!"
+    })
   }
 }
