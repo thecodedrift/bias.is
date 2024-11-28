@@ -1,6 +1,18 @@
 name: K-Pop Database Sync
 
 on:
+  workflow_dispatch:
+    inputs:
+      DEBUG:
+        description: 'Log level'
+        required: false
+        type: choice
+        default: 'info'
+        options:
+          - 'debug'
+          - 'info'
+          - 'warn'
+          - 'error'
   schedule:
     # midnight every monday is 3 pm UTC on Sunday
     - cron: '0 15 * * 0'
