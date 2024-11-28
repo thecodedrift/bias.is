@@ -27,6 +27,7 @@ jobs:
         with:
           version: 9
           node-version: 20
+          run_install: true
       - name: Run mysql2db script & create new DB
         run: pnpm tsx ./scripts/mysql2db.ts
       - name: Commit new DB (triggers labeler update)
