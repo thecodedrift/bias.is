@@ -16,6 +16,9 @@ on:
   schedule:
     # midnight every monday is 3 pm UTC on Sunday
     - cron: '0 15 * * 0'
+permissions:
+  # Allowed to commit changes back to the repo
+  contents: write
 
 jobs:
   sync:
@@ -30,5 +33,16 @@ jobs:
           run_install: true
       - name: Run mysql2db script & create new DB
         run: pnpm tsx ./scripts/mysql2db.ts
+        env:
+          SORIDATA_KEY: ${{ secrets.SORIDATA_KEY }}
+          SORIDATA_CONTACT: ${{ secrets.SORIDATA_CONTACT }}
       - name: Commit new DB (triggers labeler update)
-        run: echo 'not implemented yet'
+        uses: EndBug/add-and-commit@v9
+        with:
+          # Add only the file intended to be changed
+          # Note on add: this is a YAML string inside a strig
+          # See: https://github.com/marketplace/actions/add-commit#array-inputs
+          add: |
+            - db/kpop.db
+          message: "chore: Syncs latest Soridata information"
+          default_author: github_actions
