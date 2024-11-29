@@ -16,15 +16,12 @@ import {
 } from "./labeler.js";
 import { ADMINS, DID, HANDLE, LABELER_PASSWORD } from "./constants.js";
 import { en } from "./lang.js";
-import { kprofiles } from "./sources/kprofiles.com.js";
 import { help } from "./actions/help.js";
 import { reset } from "./actions/reset.js";
 import { add } from "./actions/add.js";
 import { ult } from "./actions/ult.js";
 import { admin } from "./actions/admin.js";
 import { list } from "./actions/list.js";
-
-const sources = [kprofiles];
 
 const actions = [help, add, ult, list, reset, admin];
 
@@ -33,6 +30,10 @@ const defaultAction = help;
 const bot = new Bot({
   emitChatEvents: true,
 });
+
+const onBotError = (error: unknown) => {
+  console.error(error);
+};
 
 let session = getStoredSession();
 
@@ -64,24 +65,31 @@ if (!session) {
 
 await bot.setChatPreference(IncomingChatPreference.All);
 
+// simple error to logs for now, removes unhandled errors
+bot.on("error", onBotError);
+
 bot.on("like", async ({ subject, user }) => {
-  // We only care if the user liked the labeler
-  if (subject instanceof Labeler !== true) {
-    return;
+  try {
+    // We only care if the user liked the labeler
+    if (subject instanceof Labeler !== true) {
+      return;
+    }
+
+    const [err, conversation] = await to(
+      bot.getConversationForMembers([user.did])
+    );
+
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    await conversation.sendMessage({
+      text: en.welcome,
+    });
+  } catch (error) {
+    onBotError(error);
   }
-
-  const [err, conversation] = await to(
-    bot.getConversationForMembers([user.did])
-  );
-
-  if (err) {
-    console.error(err);
-    return;
-  }
-
-  await conversation.sendMessage({
-    text: en.welcome,
-  });
 });
 
 // async function addRepoLabelForUser(
@@ -100,38 +108,43 @@ bot.on("like", async ({ subject, user }) => {
 // }
 
 bot.on("message", async (message: ChatMessage) => {
-  console.log(`Received message: ${message.text}`);
-  const isAdmin = ADMINS.includes(message.senderDid);
-
-  const validActions = actions.filter((action) => {
-    return !action.admin || isAdmin;
-  });
-
-  const [err, conversation] = await to(
-    bot.getConversationForMembers([message.senderDid])
-  );
-
-  if (err) {
-    console.error(err);
-    return;
-  }
-
-  let handler = defaultAction.handler;
-  for (const action of validActions) {
-    if (message.text.match(action.match)) {
-      handler = action.handler;
-      break;
-    }
-  }
-
   try {
-    await handler(message, conversation, {
-      getActions: () => validActions,
+    console.log(`Received message: ${message.text}`);
+    const isAdmin = ADMINS.includes(message.senderDid);
+
+    const validActions = actions.filter((action) => {
+      return !action.admin || isAdmin;
     });
-  } catch (err) {
-    console.error(err);
-    await conversation.sendMessage({
-      text: "Encountered an error. Give us a moment to recover.",
-    });
+
+    const [err, conversation] = await to(
+      bot.getConversationForMembers([message.senderDid])
+    );
+
+    if (err) {
+      onBotError(err);
+      return;
+    }
+
+    let handler = defaultAction.handler;
+    for (const action of validActions) {
+      if (message.text.match(action.match)) {
+        handler = action.handler;
+        break;
+      }
+    }
+
+    // nested in order to split bot errors from action errors
+    try {
+      await handler(message, conversation, {
+        getActions: () => validActions,
+      });
+    } catch (err) {
+      console.error(err);
+      await conversation.sendMessage({
+        text: "Encountered an error. Give us a moment to recover.",
+      });
+    }
+  } catch (error) {
+    onBotError(error);
   }
 });
