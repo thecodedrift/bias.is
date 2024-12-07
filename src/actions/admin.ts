@@ -25,6 +25,38 @@ const subCommands: Record<string, AdminActionHandler> = {
     });
   },
 
+  add: async (message, conversation, options) => {
+    if (!options?.arguments) {
+      await conversation.sendMessage({
+        text: "Invalid add command",
+      });
+      return;
+    }
+
+    const stmt = await kpopdb.prepare(
+        `select * from app_kpop_group where NAME like ? or kname like ? AND is_collab = "n" limit 1;`,
+        options.arguments.replace(/^"/, "").replace(/"$/, "")
+      );
+
+      const rows = await stmt.all();
+  
+      if (rows.length === 0) {
+        await conversation.sendMessage({
+          text: `No bias found for "${options.arguments}"`,
+        });
+        return;
+      }
+
+      const row = rows[0];
+
+      await conversation.sendMessage({
+        text: dedent`
+          ${message.text}
+          Added ${row.name} as bias for ${message.senderDid}
+        `,
+      });
+  },
+
   search: async (message, conversation, options) => {
     // /admin search yoongi (select name, fanclub, alias from app_kpop_group where name like "%yoongi%" or alias like "%yoongi%" or fname like "%yoongi%")
     // /admin search "ive" (name)
