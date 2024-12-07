@@ -33,28 +33,31 @@ const subCommands: Record<string, AdminActionHandler> = {
       return;
     }
 
+    const search = options.arguments.replace(/^"/, "").replace(/"$/, "");
+
     const stmt = await kpopdb.prepare(
-        `select * from app_kpop_group where NAME like ? or kname like ? AND is_collab = "n" limit 1;`,
-        options.arguments.replace(/^"/, "").replace(/"$/, "")
-      );
+      `select * from app_kpop_group where NAME like ? or kname like ? AND is_collab = "n" limit 1;`,
+      search,
+      search
+    );
 
-      const rows = await stmt.all();
-  
-      if (rows.length === 0) {
-        await conversation.sendMessage({
-          text: `No bias found for "${options.arguments}"`,
-        });
-        return;
-      }
+    const rows = await stmt.all();
 
-      const row = rows[0];
-
+    if (rows.length === 0) {
       await conversation.sendMessage({
-        text: dedent`
+        text: `No bias found for "${options.arguments}"`,
+      });
+      return;
+    }
+
+    const row = rows[0];
+
+    await conversation.sendMessage({
+      text: dedent`
           ${message.text}
           Added ${row.name} as bias for ${message.senderDid}
         `,
-      });
+    });
   },
 
   search: async (message, conversation, options) => {
@@ -123,9 +126,9 @@ export const admin: Action = {
   description: "Do admin commands (must have admin DID)",
   admin: true,
   async handler(message, conversation, options) {
-    const [subCommand, args] = message.text
+    const [subCommand, ...args] = message.text
       .replace(commandRegex, "")
-      .split(" ", 2);
+      .split(" ");
 
     if (!subCommand) {
       await conversation.sendMessage({
@@ -134,7 +137,7 @@ export const admin: Action = {
       return;
     }
 
-    console.warn(`ADMIN COMMAND: ${subCommand} (${args})`);
+    console.warn(`ADMIN COMMAND: ${subCommand} (${args.join(" ")})`);
 
     if (!subCommands[subCommand]) {
       await conversation.sendMessage({
@@ -145,7 +148,7 @@ export const admin: Action = {
 
     await subCommands[subCommand](message, conversation, {
       ...options,
-      arguments: args ?? "",
+      arguments: args.join(" ") ?? "",
     });
   },
 };
