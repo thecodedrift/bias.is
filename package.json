@@ -27,6 +27,7 @@
     "await-to-js": "^3.0.0",
     "dedent": "^1.5.3",
     "dotenv": "^16.4.5",
+    "hangul-romanization": "^1.0.1",
     "sprintf-js": "1.1.3",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",

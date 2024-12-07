@@ -5,6 +5,15 @@ import {
 } from "@skyware/labeler/scripts";
 import { DID, PORT, MAXLABELS, SIGNING_KEY, LABELER_PASSWORD, DB_PATH } from "./constants.js";
 import { LabelerServer } from "@skyware/labeler";
+import { db } from "./db.js";
+import { toIdentifier } from "./util/toIdentifier.js";
+
+export class MaxLabelsExceededError extends Error {
+  constructor() {
+    super("Max labels exceeded");
+    this.name = "MaxLabelsExceededError";
+  }
+}
 
 export const server = new LabelerServer({
   did: DID,
@@ -22,20 +31,14 @@ const credentials = {
   password: LABELER_PASSWORD,
 };
 
-interface Label {
+export type Label = {
   name: string;
   description: string;
 }
 
-function getIdentifier(name: string) {
-  // TODO this is where future Jakob is gonna be sad
-  // 2NE1 becomes "two-ne-one"
-  // ref: https://github.com/hipstersmoothie/github-labeler-bot/blob/c08d551e9f10a03908619c73b9f0c51a4e5bd982/src/label-server.ts#L43
-  return name.replace("/", "-");
-}
-
+// internal function to create a label on atproto
 async function createLabel({ name, description }: Label) {
-  const identifier = getIdentifier(name);
+  const identifier = toIdentifier(name);
   const currentLabels = (await getLabelerLabelDefinitions(credentials)) || [];
 
   if (currentLabels.find((label) => label.identifier === identifier)) {
@@ -57,54 +60,51 @@ async function createLabel({ name, description }: Label) {
   console.log(`Created label ${identifier}!`);
 }
 
+/** Add a given label for a DID, automatically converting the labels to identifiers */
 export const addUserLabel = async (did: string, label: Label) => {
-  const identifier = getIdentifier(label.name);
-  // Get the current labels for the did
-  const query = server.db
-    .prepare<string[]>(`SELECT * FROM labels WHERE uri = ?`)
-    .all(did) as ComAtprotoLabelDefs.Label[];
+  // reduce label name to a valid atproto identifier
+  const identifier = toIdentifier(label.name);
 
+  // get current labels
+  const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, did);
+  const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
+
+  // create the label on atproto
   await createLabel(label);
 
   // make a set of the current labels
-  const labels = query.reduce((set, label) => {
+  const labels = rows.reduce((set, label) => {
     if (!label.neg) set.add(label.val);
     else set.delete(label.val);
     return set;
   }, new Set<string>());
 
-  try {
-    if (labels.size < MAXLABELS) {
-      server.createLabel({ uri: did, val: identifier });
-      console.log(`${new Date().toISOString()} Labeled ${did}: ${identifier}`);
-      return true;
-    }
-  } catch (err) {
-    console.error(err);
+  if (labels.size >= MAXLABELS) {
+    throw new MaxLabelsExceededError();
   }
 
-  return false;
+  const saved = server.createLabel({ uri: did, val: identifier });
+
+  return saved;
 };
 
+/** Removes all labels for a given DID */
 export const clearUserLabels = async (did: string) => {
-  // Get the current labels for the did
-  const query = server.db
-    .prepare<string[]>(`SELECT * FROM labels WHERE uri = ?`)
-    .all(did) as ComAtprotoLabelDefs.Label[];
-
-  // make a set of the current labels
-  const labels = query.reduce((set, label) => {
-    if (!label.neg) set.add(label.val);
-    else set.delete(label.val);
-    return set;
-  }, new Set<string>());
-
-  try {
-    server.createLabels({ uri: did }, { negate: [...labels] });
-    console.log(`${new Date().toISOString()} Deleted labels: ${did}`);
-  } catch (err) {
-    console.error(err);
+  const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, did);
+  const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
+  const toNegate = new Set<string>();
+  for (const row of rows) {
+    if (!row.neg) {
+      toNegate.add(row.val);
+    } else {
+      toNegate.delete(row.val);
+    }
   }
+
+  // change labels on server
+  server.createLabels({ uri: did }, { negate: [...toNegate] });
+
+  return toNegate;
 };
 
 interface Session {

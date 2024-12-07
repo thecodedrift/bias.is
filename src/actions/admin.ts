@@ -1,10 +1,9 @@
 import { Action, ActionHandler } from "./action.js";
-import { ComAtprotoLabelDefs } from "@atcute/client/lexicons";
-import { db, kpopdb } from "../db.js";
-import { server } from "../labeler.js";
+import { kpopdb } from "../db.js";
 import dedent from "dedent";
-import { doReset } from "./reset.js";
 import { doList } from "./list.js";
+import { cleanArgument } from "../util/cleanArgument.js";
+import { addUserLabel, clearUserLabels } from "../labeler.js";
 
 type AdminActionHandler = ActionHandler<{
   arguments: string;
@@ -16,7 +15,7 @@ const subCommands: Record<string, AdminActionHandler> = {
   reset: async (message, conversation, options) => {
     // TODO to reset someone else's, use a nonce
 
-    const negated = await doReset(message.senderDid);
+    const negated = await clearUserLabels(message.senderDid);
     await conversation.sendMessage({
       text: dedent`
         ${message.text}
@@ -51,6 +50,13 @@ const subCommands: Record<string, AdminActionHandler> = {
     }
 
     const row = rows[0];
+
+    await addUserLabel(message.senderDid, {
+      name: row.name,
+      description: dedent`
+        ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}
+      `,
+    });
 
     await conversation.sendMessage({
       text: dedent`
@@ -126,9 +132,11 @@ export const admin: Action = {
   description: "Do admin commands (must have admin DID)",
   admin: true,
   async handler(message, conversation, options) {
-    const [subCommand, ...args] = message.text
+    const [subCommand, ...splitArgs] = message.text
       .replace(commandRegex, "")
       .split(" ");
+
+    const args = cleanArgument(splitArgs.join(" "));
 
     if (!subCommand) {
       await conversation.sendMessage({
@@ -137,7 +145,7 @@ export const admin: Action = {
       return;
     }
 
-    console.warn(`ADMIN COMMAND: ${subCommand} (${args.join(" ")})`);
+    console.warn(`ADMIN COMMAND: ${subCommand} (${args})`);
 
     if (!subCommands[subCommand]) {
       await conversation.sendMessage({
@@ -148,7 +156,7 @@ export const admin: Action = {
 
     await subCommands[subCommand](message, conversation, {
       ...options,
-      arguments: args.join(" ") ?? "",
+      arguments: args ?? "",
     });
   },
 };
