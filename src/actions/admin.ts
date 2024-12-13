@@ -4,6 +4,7 @@ import dedent from "dedent";
 import { doList } from "./list.js";
 import { cleanArgument } from "../util/cleanArgument.js";
 import { addUserLabel, clearUserLabels } from "../labeler.js";
+import { doSearch } from "./search.js";
 
 type AdminActionHandler = ActionHandler<{
   arguments: string;
@@ -77,21 +78,7 @@ const subCommands: Record<string, AdminActionHandler> = {
       return;
     }
 
-    const stmt = await (options.arguments.startsWith('"')
-      ? kpopdb.prepare(
-          `SELECT * from app_kpop_group where name = ? AND is_collab = "n"`,
-          options.arguments.replace(/^"/, "").replace(/"$/, "")
-        )
-      : kpopdb.prepare(
-          `SELECT * from app_kpop_group where (name like ? or fanclub like ? or alias like ? or fname like ?) AND is_collab = "n"`,
-          `%${options.arguments}%`,
-          `%${options.arguments}%`,
-          `%${options.arguments}%`,
-          `%${options.arguments}%`
-        ));
-
-    const rows = await stmt.all();
-    // TODO: there are no types for kpopdb. We should generate those...
+    const rows = await doSearch(message.senderDid, options.arguments);
 
     if (rows.length === 0) {
       await conversation.sendMessage({
@@ -100,16 +87,11 @@ const subCommands: Record<string, AdminActionHandler> = {
       return;
     }
 
-    const results = rows.map((row) => {
-      const fanclub = row.fanclub ? `(${row.fanclub})` : "";
-      return `${row.name} ${fanclub}`.trim();
-    });
-
     await conversation.sendMessage({
       text: dedent`
         ${message.text}
         Search results for ${options.arguments}:
-        ${results.join("\n")}
+        ${rows.join("\n")}
       `,
     });
   },
