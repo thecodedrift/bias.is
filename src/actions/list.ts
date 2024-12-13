@@ -11,6 +11,8 @@ import dedent from "dedent";
 export const doList = async (did: At.DID) => {
   const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, did);
   const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
+  const active = rows.filter((row) => !row.neg);
+
   const currentLabels =
     (await getLabelerLabelDefinitions({
       identifier: DID,
@@ -21,11 +23,10 @@ export const doList = async (did: At.DID) => {
   const ults = currentLabels.filter((label) =>
     label.locales?.[0]?.name.startsWith("💖")
   );
-  const active = rows.filter((row) => !row.neg);
 
   // find the ults and biases, merge with the currentLabels data under the "details" key
   const bias = active
-    .filter((label) => ults.find((ult) => ult.identifier !== label.val))
+    .filter((label) => !ults.find((ult) => ult.identifier === label.val))
     .map((label) => {
       const details = currentLabels.find(
         (current) => current.identifier === label.val
