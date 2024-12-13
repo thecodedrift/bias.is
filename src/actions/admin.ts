@@ -78,7 +78,7 @@ const subCommands: Record<string, AdminActionHandler> = {
       return;
     }
 
-    const rows = await doSearch(message.senderDid, options.arguments);
+    const rows = await doSearch(options.arguments);
 
     if (rows.length === 0) {
       await conversation.sendMessage({
