@@ -1,13 +1,28 @@
+import dedent from "dedent";
+import { clearUserLabels } from "../labeler.js";
 import { Action } from "./action.js";
+
+export const doReset = async (did: string) => {
+  const negated = await clearUserLabels(did);
+  return negated;
+};
 
 export const reset: Action = {
   match: /^\/reset$/,
   cmd: "/reset",
   description: "Resets your stan and ult labels",
   async handler(message, conversation) {
-    // TODO
+    const negated = await doReset(message.senderDid);
+
+    const response =
+      negated.size === 0
+        ? "I didn't need to remove any labels"
+        : negated.size === 1
+          ? "I removed your label for you"
+          : `I removed ${negated.size} labels for you`;
+
     await conversation.sendMessage({
-      text: "I know you're eager, but we're still building!"
-    })
+      text: response
+    });
   },
 };

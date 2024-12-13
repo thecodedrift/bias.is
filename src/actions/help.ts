@@ -1,6 +1,10 @@
-import { en } from "../lang.js";
+import dedent from "dedent";
 import { Action } from "./action.js";
-import { sprintf } from "sprintf-js"
+
+export const messageWelcome = "Welcome to the bias.is labeler!";
+
+export const messageHelp =
+  "To get started, type /search followed by the name of your bias. For example, /search BTS. Or just skip straight to these other commands:";
 
 export const help: Action = {
   match: /^\/help$/,
@@ -9,12 +13,16 @@ export const help: Action = {
   async handler(message, conversation, options) {
     const actions = options?.getActions?.() ?? [];
 
-    const list = actions.filter(action => action.admin !== true).map((action) => `${action.cmd} - ${action.description}`).join("\n")
+    const list = actions
+      .filter((action) => action.admin !== true)
+      .map((action) => `${action.cmd} - ${action.description}`)
+      .join("\n");
 
     conversation.sendMessage({
-      text: sprintf(en.help, {
-        commands: list
-      })
-    })
-  }
-}
+      text: dedent`
+        ${messageHelp}
+        ${list}
+      `,
+    });
+  },
+};

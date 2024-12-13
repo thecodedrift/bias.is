@@ -15,8 +15,7 @@ import {
   setStoredSession,
 } from "./labeler.js";
 import { ADMINS, DID, HANDLE, LABELER_PASSWORD } from "./constants.js";
-import { en } from "./lang.js";
-import { help } from "./actions/help.js";
+import { help, messageHelp, messageWelcome } from "./actions/help.js";
 import { reset } from "./actions/reset.js";
 import { add } from "./actions/add.js";
 import { ult } from "./actions/ult.js";
@@ -85,8 +84,18 @@ bot.on("like", async ({ subject, user }) => {
       return;
     }
 
+    const list = actions
+      .filter((action) => action.admin !== true)
+      .map((action) => `${action.cmd} - ${action.description}`)
+      .join("\n");
+
     await conversation.sendMessage({
-      text: en.welcome,
+      text: dedent`
+        ${messageWelcome}
+
+        ${messageHelp}
+        ${list}
+      `,
     });
   } catch (error) {
     onBotError(error);

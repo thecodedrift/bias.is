@@ -3,8 +3,9 @@ import { kpopdb } from "../db.js";
 import dedent from "dedent";
 import { doList } from "./list.js";
 import { cleanArgument } from "../util/cleanArgument.js";
-import { addUserLabel, clearUserLabels } from "../labeler.js";
+import { addUserLabel } from "../labeler.js";
 import { doSearch } from "./search.js";
+import { doReset } from "./reset.js";
 
 type AdminActionHandler = ActionHandler<{
   arguments: string;
@@ -14,9 +15,8 @@ const commandRegex = /^\/admin[\s]+/;
 
 const subCommands: Record<string, AdminActionHandler> = {
   reset: async (message, conversation, options) => {
-    // TODO to reset someone else's, use a nonce
+    const negated = await doReset(message.senderDid);
 
-    const negated = await clearUserLabels(message.senderDid);
     await conversation.sendMessage({
       text: dedent`
         ${message.text}
