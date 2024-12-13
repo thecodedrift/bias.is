@@ -81,8 +81,14 @@ const subCommands: Record<string, AdminActionHandler> = {
       text: dedent`
         ${message.text}
         Labels assigned to ${message.senderDid}:
-        Bias: ${bias.join(", ")}
-        Ult: ${ult.join(", ")}
+        Bias: ${bias.map(b => {
+          const en = b.details?.locales.find(l => l.lang === "en");
+          return en?.name || b.val;
+        }).join(", ")}
+        Ult: ${ult.map(b => {
+          const en = b.details?.locales.find(l => l.lang === "en");
+          return en?.name || b.val;
+        }).join(", ")}
       `,
     });
   },

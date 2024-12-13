@@ -10,7 +10,7 @@ export const doReset = async (did: string) => {
 export const reset: Action = {
   match: /^\/reset$/,
   cmd: "/reset",
-  description: "Resets your stan and ult labels",
+  description: "Resets your bias and ult labels",
   async handler(message, conversation) {
     const negated = await doReset(message.senderDid);
 

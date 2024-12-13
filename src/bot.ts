@@ -1,16 +1,12 @@
 import {
   Bot,
   ChatMessage,
-  Conversation,
-  DeletedChatMessage,
   IncomingChatPreference,
   Labeler,
 } from "@skyware/bot";
 import dedent from "dedent";
 import { to } from "await-to-js";
 import {
-  addUserLabel,
-  clearUserLabels,
   getStoredSession,
   setStoredSession,
 } from "./labeler.js";

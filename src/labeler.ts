@@ -69,9 +69,6 @@ export const addUserLabel = async (did: string, label: Label) => {
   const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, did);
   const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
 
-  // create the label on atproto
-  await createLabel(label);
-
   // make a set of the current labels
   const labels = rows.reduce((set, label) => {
     if (!label.neg) set.add(label.val);
@@ -82,6 +79,9 @@ export const addUserLabel = async (did: string, label: Label) => {
   if (labels.size >= MAXLABELS) {
     throw new MaxLabelsExceededError();
   }
+
+  // create the label on atproto
+  await createLabel(label);
 
   const saved = server.createLabel({ uri: did, val: identifier });
 

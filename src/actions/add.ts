@@ -1,7 +1,7 @@
 import { Action } from "./action.js";
-import { db, kpopdb } from "../db.js";
-import { addUserLabel, server } from "../labeler.js";
-import { At, ComAtprotoLabelDefs } from "@atcute/client/lexicons";
+import { kpopdb } from "../db.js";
+import { addUserLabel } from "../labeler.js";
+import { At } from "@atcute/client/lexicons";
 import dedent from "dedent";
 
 export type Label = {
@@ -43,11 +43,15 @@ export const doAdd = async (
 
   const row = rows[0];
 
+  const biasName = options?.ult ? `💖 ${row.name}` : row.name;
+  const biasDescription = dedent`
+    ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}
+    ...in fact, it's their 💖 ult~
+  `;
+
   const label = await addUserLabel(did, {
-    name: row.name,
-    description: dedent`
-        ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}
-      `,
+    name: biasName,
+    description: biasDescription,
   });
 
   return label;
@@ -55,13 +59,13 @@ export const doAdd = async (
 
 export const add: Action = {
   match: /^\/add[\s]+/,
-  cmd: "/add <url>",
-  description: "Add a group or idol as a label",
+  cmd: "/add <bias>",
+  description: "Add a group or soloist as a bias",
   async handler(message, conversation) {
     const bias = message.text.replace(add.match, "").trim();
     const result = await doAdd(message.senderDid, bias);
 
-    console.log(`LABEL ADD: ${message.senderDid} added ${result.id}`);
+    console.log(`LABEL ADD: ${message.senderDid} added ${result.val}`);
     await conversation.sendMessage({
       text: `❤️ Got you. ${bias} is now your bias~`,
     });
