@@ -101,7 +101,8 @@ const subCommands: Record<string, AdminActionHandler> = {
     }
 
     const results = rows.map((row) => {
-      return `${row.name} (${row.fanclub})`;
+      const fanclub = row.fanclub ? `(${row.fanclub})` : "";
+      return `${row.name} ${fanclub}`.trim();
     });
 
     await conversation.sendMessage({
