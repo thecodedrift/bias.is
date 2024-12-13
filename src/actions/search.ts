@@ -2,22 +2,31 @@ import dedent from "dedent";
 import { kpopdb } from "../db.js";
 import { Action } from "./action.js";
 
+type SearchOptions = {
+  exact?: boolean
+  limit?: number
+}
+
 /**
  * Search kpop db for a bias
  */
-export const doSearch = async (search: string, limit = 5) => {
-  const stmt = await (search.startsWith('"')
-    ? kpopdb.prepare(
-        `SELECT * from app_kpop_group where name = ? AND is_collab = "n" LIMIT ${limit}`,
-        search.replace(/^"/, "").replace(/"$/, "")
-      )
-    : kpopdb.prepare(
-        `SELECT * from app_kpop_group where (name like ? or fanclub like ? or alias like ? or fname like ?) AND is_collab = "n" LIMIT ${limit}`,
-        `%${search}%`,
-        `%${search}%`,
-        `%${search}%`,
-        `%${search}%`
-      ));
+export const doSearch = async (search: string, options:SearchOptions) => {
+  const { exact = false, limit = 5 } = options;
+
+  const exactSearch = await kpopdb.prepare(
+    `SELECT * from app_kpop_group where name = ? AND is_collab = "n" LIMIT ${limit}`,
+    search.replace(/^"/, "").replace(/"$/, "")
+  );
+
+  const looseSearch = await kpopdb.prepare(
+    `SELECT * from app_kpop_group where (name like ? or fanclub like ? or alias like ? or fname like ?) AND is_collab = "n" LIMIT ${limit}`,
+    `%${search}%`,
+    `%${search}%`,
+    `%${search}%`,
+    `%${search}%`
+  );
+
+  const stmt = (exact || search.startsWith('"')) ? exactSearch : looseSearch;
 
   const rows = await stmt.all();
   // TODO: there are no types for kpopdb. We should generate those...
@@ -36,7 +45,9 @@ export const search: Action = {
   description: "Look for a bias",
   async handler(message, conversation) {
     const searchValue = message.text.replace(/^\/search[\s]+/, "").trim();
-    const rows = await doSearch(searchValue, 6);
+    const rows = await doSearch(searchValue, {
+      limit: 6
+    });
 
     if (rows.length === 0) {
       await conversation.sendMessage({
@@ -49,6 +60,8 @@ export const search: Action = {
       rows.pop();
       rows.push("... and more");
     }
+
+    console.log(`SEARCH: ${message.senderDid} query ${searchValue}`);
 
     await conversation.sendMessage({
       text: dedent`

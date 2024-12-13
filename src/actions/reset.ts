@@ -21,6 +21,7 @@ export const reset: Action = {
           ? "I removed your label for you"
           : `I removed ${negated.size} labels for you`;
 
+    console.log(`LABEL RESET: ${message.senderDid} removed ${negated.size}`);
     await conversation.sendMessage({
       text: response
     });

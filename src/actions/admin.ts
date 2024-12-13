@@ -6,6 +6,7 @@ import { cleanArgument } from "../util/cleanArgument.js";
 import { addUserLabel } from "../labeler.js";
 import { doSearch } from "./search.js";
 import { doReset } from "./reset.js";
+import { doAdd } from "./add.js";
 
 type AdminActionHandler = ActionHandler<{
   arguments: string;
@@ -33,36 +34,12 @@ const subCommands: Record<string, AdminActionHandler> = {
       return;
     }
 
-    const search = options.arguments.replace(/^"/, "").replace(/"$/, "");
-
-    const stmt = await kpopdb.prepare(
-      `select * from app_kpop_group where NAME like ? or kname like ? AND is_collab = "n" limit 1;`,
-      search,
-      search
-    );
-
-    const rows = await stmt.all();
-
-    if (rows.length === 0) {
-      await conversation.sendMessage({
-        text: `No bias found for "${options.arguments}"`,
-      });
-      return;
-    }
-
-    const row = rows[0];
-
-    await addUserLabel(message.senderDid, {
-      name: row.name,
-      description: dedent`
-        ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}
-      `,
-    });
+    const results = await doAdd(message.senderDid, options.arguments)
 
     await conversation.sendMessage({
       text: dedent`
           ${message.text}
-          Added ${row.name} as bias for ${message.senderDid}
+          Added ${results.id} as bias for ${message.senderDid}
         `,
     });
   },
@@ -78,7 +55,9 @@ const subCommands: Record<string, AdminActionHandler> = {
       return;
     }
 
-    const rows = await doSearch(options.arguments);
+    const rows = await doSearch(options.arguments, {
+      limit: 10
+    });
 
     if (rows.length === 0) {
       await conversation.sendMessage({
