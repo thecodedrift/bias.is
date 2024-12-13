@@ -40,11 +40,11 @@ export const doSearch = async (search: string, options:SearchOptions) => {
 };
 
 export const search: Action = {
-  match: /^\/search/,
+  match: /^\/search[\s]/,
   cmd: "/search",
   description: "Look for a bias",
   async handler(message, conversation) {
-    const searchValue = message.text.replace(/^\/search[\s]+/, "").trim();
+    const searchValue = message.text.replace(search.match, "").trim();
     const rows = await doSearch(searchValue, {
       limit: 6
     });
