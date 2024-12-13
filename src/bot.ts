@@ -22,8 +22,9 @@ import { add } from "./actions/add.js";
 import { ult } from "./actions/ult.js";
 import { admin } from "./actions/admin.js";
 import { list } from "./actions/list.js";
+import { search } from "./actions/search.js";
 
-const actions = [help, add, ult, list, reset, admin];
+const actions = [help, add, ult, list, search, reset, admin];
 
 const defaultAction = help;
 
