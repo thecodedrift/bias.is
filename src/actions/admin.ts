@@ -77,6 +77,8 @@ const subCommands: Record<string, AdminActionHandler> = {
 
   list: async (message, conversation) => {
     const { bias, ult } = await doList(message.senderDid);
+    console.log(JSON.stringify(bias));
+    console.log(JSON.stringify(ult));
     await conversation.sendMessage({
       text: dedent`
         ${message.text}
