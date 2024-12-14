@@ -44,9 +44,10 @@ export const doAdd = async (
   const row = rows[0];
 
   const biasName = options?.ult ? `💖 ${row.name}` : row.name;
+  const ultLine = options?.ult ? "...in fact, it's their 💖 ult~" : "";
   const biasDescription = dedent`
     ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}
-    ...in fact, it's their 💖 ult~
+    ${ultLine}
   `;
 
   const label = await addUserLabel(did, {
@@ -65,9 +66,9 @@ export const add: Action = {
     const bias = message.text.replace(add.match, "").trim();
     const result = await doAdd(message.senderDid, bias);
 
-    console.log(`LABEL ADD: ${message.senderDid} added ${result.val}`);
+    console.log(`LABEL ADD: ${message.senderDid} added ${result.name}`);
     await conversation.sendMessage({
-      text: `❤️ Got you. ${bias} is now your bias~`,
+      text: `❤️ Got you. ${result.name} is now your bias~`,
     });
   },
 };

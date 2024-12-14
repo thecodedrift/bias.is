@@ -115,9 +115,9 @@ export const addUserLabel = async (did: string, label: Label) => {
   // create the label on atproto
   await createLabel(label);
 
-  const saved = server.createLabel({ uri: did, val: identifier });
+  server.createLabel({ uri: did, val: identifier });
 
-  return saved;
+  return label;
 };
 
 /**

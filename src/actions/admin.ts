@@ -39,7 +39,7 @@ const subCommands: Record<string, AdminActionHandler> = {
     await conversation.sendMessage({
       text: dedent`
           ${message.text}
-          Added ${results.id} as bias for ${message.senderDid}
+          Added ${results.name} as bias for ${message.senderDid}
         `,
     });
   },
