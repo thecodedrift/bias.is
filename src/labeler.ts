@@ -96,13 +96,19 @@ export const clearUserLabels = async (did: string) => {
   for (const row of rows) {
     if (!row.neg) {
       toNegate.add(row.val);
-    } else {
-      toNegate.delete(row.val);
     }
+  }
+
+  if (toNegate.size === 0) {
+    return toNegate;
   }
 
   // change labels on server
   server.createLabels({ uri: did }, { negate: [...toNegate] });
+
+  // delete from labeler
+  const deleteStmt = await db.prepare(`DELETE FROM labels WHERE uri = ? AND val IN ?`, did, [...toNegate]);
+  await deleteStmt.run();
 
   return toNegate;
 };
