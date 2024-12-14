@@ -1,9 +1,7 @@
 import { Action, ActionHandler } from "./action.js";
-import { kpopdb } from "../db.js";
 import dedent from "dedent";
 import { doList } from "./list.js";
 import { cleanArgument } from "../util/cleanArgument.js";
-import { addUserLabel } from "../labeler.js";
 import { doSearch } from "./search.js";
 import { doReset } from "./reset.js";
 import { doAdd } from "./add.js";

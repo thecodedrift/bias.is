@@ -1,5 +1,4 @@
-import { At, ComAtprotoLabelDefs } from "@atcute/client/lexicons";
-import { db } from "../db.js";
+import { At } from "@atcute/client/lexicons";
 import { Action } from "./action.js";
 import { getLabelerLabelDefinitions } from "@skyware/labeler/scripts";
 import { DID, LABELER_PASSWORD } from "../constants.js";

@@ -1,4 +1,3 @@
-import dedent from "dedent";
 import { clearUserLabels } from "../labeler.js";
 import { Action } from "./action.js";
 
