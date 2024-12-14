@@ -15,13 +15,13 @@ export const reset: Action = {
     const negated = await doReset(message.senderDid);
 
     const response =
-      negated.size === 0
+      negated.length === 0
         ? "I didn't need to remove any labels"
-        : negated.size === 1
+        : negated.length === 1
           ? "I removed your label for you"
-          : `I removed ${negated.size} labels for you`;
+          : `I removed ${negated.length} labels for you`;
 
-    console.log(`LABEL RESET: ${message.senderDid} removed ${negated.size}`);
+    console.log(`LABEL RESET: ${message.senderDid} removed ${negated.length}`);
     await conversation.sendMessage({
       text: response
     });

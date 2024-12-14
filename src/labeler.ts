@@ -3,7 +3,14 @@ import {
   getLabelerLabelDefinitions,
   setLabelerLabelDefinitions,
 } from "@skyware/labeler/scripts";
-import { DID, PORT, MAXLABELS, SIGNING_KEY, LABELER_PASSWORD, DB_PATH } from "./constants.js";
+import {
+  DID,
+  PORT,
+  MAXLABELS,
+  SIGNING_KEY,
+  LABELER_PASSWORD,
+  DB_PATH,
+} from "./constants.js";
 import { LabelerServer } from "@skyware/labeler";
 import { db } from "./db.js";
 import { toIdentifier } from "./util/toIdentifier.js";
@@ -34,10 +41,10 @@ const credentials = {
 export type Label = {
   name: string;
   description: string;
-}
+};
 
 // internal function to create a label on atproto
-async function createLabel({ name, description }: Label) {
+const createLabel = async ({ name, description }: Label) => {
   const identifier = toIdentifier(name);
   const currentLabels = (await getLabelerLabelDefinitions(credentials)) || [];
 
@@ -60,23 +67,48 @@ async function createLabel({ name, description }: Label) {
   console.log(`Created label ${identifier}!`);
 }
 
+/**
+ * Walks the label history, ensuring the most recent "active" labels are
+ * returned, and that the labels are in the correct order as applied
+ */
+export const getUserLabels = async (did: string) => {
+  // order by created ASC
+  const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ? ORDER BY cts ASC`, did);
+  const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
+
+  const active = new Set<string>();
+  // walk forward through rows, toggling active state by adding or removing
+  for (const row of rows) {
+    if (row.neg) {
+      active.delete(row.val);
+    } else {
+      active.add(row.val);
+    }
+  }
+
+  // then find the most recent rows matching active off the reverse of rows
+  // but use active as our loop to minimize iterations
+  const labels:ComAtprotoLabelDefs.Label[] = [];
+  const reversed = rows.slice().reverse();
+  for (const val of Array.from(active)) {
+    const row = reversed.find(row => row.val === val);
+    if (row) {
+      labels.push(row);
+    }
+  }
+
+  return labels;
+}
+
 /** Add a given label for a DID, automatically converting the labels to identifiers */
 export const addUserLabel = async (did: string, label: Label) => {
   // reduce label name to a valid atproto identifier
   const identifier = toIdentifier(label.name);
 
   // get current labels
-  const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, did);
-  const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
+  const active = await getUserLabels(did);
 
-  // make a set of the current labels
-  const labels = rows.reduce((set, label) => {
-    if (!label.neg) set.add(label.val);
-    else set.delete(label.val);
-    return set;
-  }, new Set<string>());
-
-  if (labels.size >= MAXLABELS) {
+  if (active.length >= MAXLABELS) {
     throw new MaxLabelsExceededError();
   }
 
@@ -88,27 +120,21 @@ export const addUserLabel = async (did: string, label: Label) => {
   return saved;
 };
 
-/** Removes all labels for a given DID */
+/**
+ * Removes all labels for a given DID
+ * Gets a list of all positive labels on your 
+ */
 export const clearUserLabels = async (did: string) => {
-  const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, did);
-  const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
-  const toNegate = new Set<string>();
-  for (const row of rows) {
-    if (!row.neg) {
-      toNegate.add(row.val);
-    }
-  }
+  // get current labels
+  const active = await getUserLabels(did);
+  const toNegate = active.map(label => label.val);
 
-  if (toNegate.size === 0) {
+  if (toNegate.length === 0) {
     return toNegate;
   }
 
   // change labels on server
   server.createLabels({ uri: did }, { negate: [...toNegate] });
-
-  // delete from labeler
-  const deleteStmt = await db.prepare(`DELETE FROM labels WHERE uri = ? AND val IN ?`, did, [...toNegate]);
-  await deleteStmt.run();
 
   return toNegate;
 };

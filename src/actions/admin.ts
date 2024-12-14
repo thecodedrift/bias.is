@@ -21,7 +21,7 @@ const subCommands: Record<string, AdminActionHandler> = {
     await conversation.sendMessage({
       text: dedent`
         ${message.text}
-        Removed ${negated.size} labels from ${message.senderDid}
+        Removed ${negated.length} labels from ${message.senderDid}
       `,
     });
   },
@@ -77,8 +77,6 @@ const subCommands: Record<string, AdminActionHandler> = {
 
   list: async (message, conversation) => {
     const { bias, ult } = await doList(message.senderDid);
-    console.log(JSON.stringify(bias));
-    console.log(JSON.stringify(ult));
     await conversation.sendMessage({
       text: dedent`
         ${message.text}

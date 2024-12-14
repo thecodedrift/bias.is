@@ -4,14 +4,14 @@ import { Action } from "./action.js";
 import { getLabelerLabelDefinitions } from "@skyware/labeler/scripts";
 import { DID, LABELER_PASSWORD } from "../constants.js";
 import dedent from "dedent";
+import { getUserLabels } from "../labeler.js";
 
 /**
  * Get the list of biases and ults for a user
  */
 export const doList = async (did: At.DID) => {
-  const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ?`, did);
-  const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
-  const active = rows.filter((row) => !row.neg);
+  // get the active labels list
+  const active = await getUserLabels(did);
 
   const currentLabels =
     (await getLabelerLabelDefinitions({
