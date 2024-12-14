@@ -4,6 +4,7 @@ import { Action } from "./action.js";
 
 type SearchOptions = {
   exact?: boolean
+  raw?: boolean
   limit?: number
 }
 
@@ -30,6 +31,10 @@ export const doSearch = async (search: string, options:SearchOptions) => {
 
   const rows = await stmt.all();
   // TODO: there are no types for kpopdb. We should generate those...
+
+  if (options.raw) {
+    return rows;
+  }
 
   const results = rows.map((row) => {
     const fanclub = row.fanclub ? `(${row.fanclub})` : "";

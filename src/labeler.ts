@@ -43,12 +43,22 @@ export type Label = {
   description: string;
 };
 
+type Options = {
+  edit?: boolean;
+};
+
 // internal function to create a label on atproto
-const createLabel = async ({ name, description }: Label) => {
+export const createLabel = async (
+  { name, description }: Label,
+  options?: Options
+) => {
   const identifier = toIdentifier(name);
   const currentLabels = (await getLabelerLabelDefinitions(credentials)) || [];
 
-  if (currentLabels.find((label) => label.identifier === identifier)) {
+  if (
+    !options?.edit &&
+    currentLabels.find((label) => label.identifier === identifier)
+  ) {
     console.log(`Label ${identifier} already exists`);
     return;
   }
@@ -65,7 +75,7 @@ const createLabel = async ({ name, description }: Label) => {
     },
   ]);
   console.log(`Created label ${identifier}!`);
-}
+};
 
 /**
  * Walks the label history, ensuring the most recent "active" labels are
@@ -73,7 +83,10 @@ const createLabel = async ({ name, description }: Label) => {
  */
 export const getUserLabels = async (did: string) => {
   // order by created ASC
-  const stmt = await db.prepare(`SELECT * FROM labels WHERE uri = ? ORDER BY cts ASC`, did);
+  const stmt = await db.prepare(
+    `SELECT * FROM labels WHERE uri = ? ORDER BY cts ASC`,
+    did
+  );
   const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
 
   const active = new Set<string>();
@@ -88,17 +101,17 @@ export const getUserLabels = async (did: string) => {
 
   // then find the most recent rows matching active off the reverse of rows
   // but use active as our loop to minimize iterations
-  const labels:ComAtprotoLabelDefs.Label[] = [];
+  const labels: ComAtprotoLabelDefs.Label[] = [];
   const reversed = rows.slice().reverse();
   for (const val of Array.from(active)) {
-    const row = reversed.find(row => row.val === val);
+    const row = reversed.find((row) => row.val === val);
     if (row) {
       labels.push(row);
     }
   }
 
   return labels;
-}
+};
 
 /** Add a given label for a DID, automatically converting the labels to identifiers */
 export const addUserLabel = async (did: string, label: Label) => {
@@ -122,12 +135,12 @@ export const addUserLabel = async (did: string, label: Label) => {
 
 /**
  * Removes all labels for a given DID
- * Gets a list of all positive labels on your 
+ * Gets a list of all positive labels on your
  */
 export const clearUserLabels = async (did: string) => {
   // get current labels
   const active = await getUserLabels(did);
-  const toNegate = active.map(label => label.val);
+  const toNegate = active.map((label) => label.val);
 
   if (toNegate.length === 0) {
     return toNegate;
