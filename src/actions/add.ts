@@ -16,8 +16,8 @@ type AddOptions = {
 /**
  * convert a kpop db row to a label
  */
-export const rowToLabel = async (row: any, ult?: boolean): Promise<Label> => {
-  const biasName = ult ? `💖 ${row.name}` : row.name;
+export const rowToLabel = (row: any, ult?: boolean): Label => {
+  const biasName = ult ? `💖 ${row.name}` : row.name as string;
   const ultLine = ult ? "...in fact, it's their 💖 ult~" : "";
   const biasDescription = dedent`
     ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}
@@ -60,7 +60,7 @@ export const doAdd = async (
 
   const row = rows[0];
 
-  const labelData = await rowToLabel(row, options?.ult);
+  const labelData = rowToLabel(row, options?.ult);
   const label = await addUserLabel(did, labelData);
 
   return label;

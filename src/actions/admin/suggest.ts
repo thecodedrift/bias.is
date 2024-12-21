@@ -21,21 +21,27 @@ export const suggest: AdminActionHandler = async (
 
   if (options?.arguments) {
     const result = await selectBias(options.arguments);
-    const [label, ultLabel] = await Promise.all([
-      rowToLabel(result),
-      rowToLabel(result, true),
-    ]);
-    identifiers.push(toIdentifier(label.name), toIdentifier(ultLabel.name));
+    identifiers.push(
+      toIdentifier(rowToLabel(result).name),
+      toIdentifier(rowToLabel(result, true).name)
+    );
   } else {
     // use users bias/ult list
+    // the "ult" version comes from the labeler, where we convert the en
+    // name to back to an identifier, turning the emoji back into dashes
+    // like "💖 ATEEZ" -> "--ATEEZ"
     const { bias, ult } = await doList(message.senderDid);
-    identifiers.push(...bias.map((b) => b.val), ...ult.map((b) => b.val));
+    const all = [...bias, ...ult]
+      .map((b) => b.details?.locales?.find((l) => l.lang === "en")?.name)
+      .filter((v) => v !== undefined)
+      .map((v) => toIdentifier(v));
+    identifiers.push(...all);
   }
 
   // order by created ASC
   const stmt = await db.prepare(`
     SELECT * FROM labels
-    WHERE val IN ('${identifiers.map(ident => ident).join("', '")}')
+    WHERE val IN ('${identifiers.map((ident) => ident).join("', '")}')
     ORDER BY cts DESC
     LIMIT 100
   `);
