@@ -13,11 +13,19 @@ type AddOptions = {
   ult?: boolean;
 };
 
+export const ultToName = (name: string) => {
+  return name.replace(/^💖\s/, "");
+}
+
+export const nameToUlt = (name: string) => {
+  return `💖 ${name}`;
+}
+
 /**
  * convert a kpop db row to a label
  */
 export const rowToLabel = (row: any, ult?: boolean): Label => {
-  const biasName = ult ? `💖 ${row.name}` : row.name as string;
+  const biasName = ult ? nameToUlt(row.name) : row.name as string;
   const ultLine = ult ? "...in fact, it's their 💖 ult~" : "";
   const biasDescription = dedent`
     ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}

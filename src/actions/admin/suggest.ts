@@ -1,7 +1,7 @@
 import dedent from "dedent";
 import { AdminActionHandler } from "./types.js";
 import { selectBias } from "../../commonSql/selectBias.js";
-import { rowToLabel } from "../add.js";
+import { nameToUlt, rowToLabel, ultToName } from "../add.js";
 import { toIdentifier } from "../../util/toIdentifier.js";
 import { doList } from "../list.js";
 import { db } from "../../db.js";
@@ -31,11 +31,19 @@ export const suggest: AdminActionHandler = async (
     // name to back to an identifier, turning the emoji back into dashes
     // like "💖 ATEEZ" -> "--ATEEZ"
     const { bias, ult } = await doList(message.senderDid);
-    const all = [...bias, ...ult]
-      .map((b) => b.details?.locales?.find((l) => l.lang === "en")?.name)
-      .filter((v) => v !== undefined)
-      .map((v) => toIdentifier(v));
-    identifiers.push(...all);
+    for (const b of bias) {
+      if (b.commonName) {
+        identifiers.push(toIdentifier(b.commonName));
+        identifiers.push(toIdentifier(nameToUlt(b.commonName)));
+      }
+    }
+
+    for (const u of ult) {
+      if (u.commonName) {
+        identifiers.push(toIdentifier(u.commonName));
+        identifiers.push(toIdentifier(ultToName(u.commonName)));
+      }
+    }
   }
 
   // order by created ASC
@@ -45,6 +53,8 @@ export const suggest: AdminActionHandler = async (
     ORDER BY cts DESC
     LIMIT 100
   `);
+
+  console.log(stmt.stmt);
   const rows = await stmt.all<ComAtprotoLabelDefs.Label[]>();
 
   const fans: Record<string, Set<string>> = {};

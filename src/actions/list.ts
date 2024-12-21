@@ -30,7 +30,9 @@ export const doList = async (did: At.DID) => {
       const details = currentLabels.find(
         (current) => current.identifier === label.val
       );
-      return { ...label, details };
+      // any locale will work, as name is the same across all
+      const commonName = details?.locales?.[0]?.name;
+      return { ...label, details, commonName };
     });
 
   const ult = active
@@ -39,7 +41,9 @@ export const doList = async (did: At.DID) => {
       const details = currentLabels.find(
         (current) => current.identifier === label.val
       );
-      return { ...label, details };
+      // any locale will work, as name is the same across all
+      const commonName = details?.locales?.[0]?.name;
+      return { ...label, details, commonName };
     });
 
   return { bias, ult };
