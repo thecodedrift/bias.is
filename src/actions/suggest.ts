@@ -9,6 +9,7 @@ import { db } from "../db.js";
 import { getLabelerLabelDefinitions } from "@skyware/labeler/scripts";
 import { DID, LABELER_PASSWORD } from "../constants.js";
 import { DidDocument } from "@atcute/client/utils/did";
+import { RichText } from "@skyware/bot";
 
 export const doSuggest = async (userDid: At.DID, suggestGroup?: string) => {
   const identifiers: string[] = [];
@@ -121,5 +122,23 @@ export const suggest: Action = {
   async handler(message, conversation, options) {
     const suggestGroup = message.text.replace(suggest.match, "").trim();
     const suggestion = await doSuggest(message.senderDid, suggestGroup);
+
+    if (!suggestion) {
+      await conversation.sendMessage({
+        text: "No suggestions available right now"
+      });
+      return;
+    }
+  
+    const outgoing = new RichText();
+    outgoing.addText("Hey! Have you met ");
+    outgoing.addMention(`@${suggestion.user.handle}`, suggestion.user.did as At.DID);
+    outgoing.addText("? They're also a fan of ");
+    outgoing.addText(suggestion.groupName);
+    outgoing.addText("!");
+  
+    await conversation.sendMessage({
+      text: outgoing
+    })
   },
 };
