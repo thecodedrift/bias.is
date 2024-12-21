@@ -47,19 +47,19 @@ export const suggest: AdminActionHandler = async (
     const fan = row.uri;
     const negate = row.neg;
 
-    if (!fans[fan]) {
-      fans[fan] = new Set();
+    if (!fans[label]) {
+      fans[label] = new Set();
     }
 
     if (negate) {
-      fans[fan].delete(label);
+      fans[label].delete(fan);
     } else {
-      fans[fan].add(label);
+      fans[label].add(fan);
     }
   }
 
-  const debug = Object.entries(fans).map(([fan, dids]) => {
-    return `${fan}: ${Array.from(dids).join(", ")}`;
+  const debug = Object.entries(fans).map(([group, dids]) => {
+    return `${group}: ${Array.from(dids).join(", ")}`;
   });
 
   await conversation.sendMessage({
