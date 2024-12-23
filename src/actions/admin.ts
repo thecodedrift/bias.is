@@ -19,7 +19,7 @@ const subCommands: Record<string, AdminActionHandler> = {
 
 export const admin: Action = {
   match: commandRegex,
-  cmd: "/admin <command>",
+  cmd: "/admin command",
   description: "Do admin commands (must have admin DID)",
   admin: true,
   async handler(message, conversation, options) {

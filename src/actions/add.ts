@@ -3,6 +3,8 @@ import { kpopdb } from "../db.js";
 import { addUserLabel } from "../labeler.js";
 import { At } from "@atcute/client/lexicons";
 import dedent from "dedent";
+import { BiasNotFoundError } from "../errors/notfound.js";
+import { AmbiguousBiasError } from "../errors/ambiguous.js";
 
 export type Label = {
   name: string;
@@ -54,16 +56,12 @@ export const doAdd = async (
   const rows = await stmt.all();
 
   if (rows.length === 0) {
-    throw new Error(`No group or soloist found for "${bias}"`);
+    throw new BiasNotFoundError(bias);
   }
 
   // also error for two results, ambiguous
   if (rows.length > 1) {
-    throw new Error(dedent`
-        Ambiguous bias for "${bias}" found: ${rows.map((row) => row.name).join(", ")}
-
-        Try searching with /search to get their exact name
-      `);
+    throw new AmbiguousBiasError(bias, rows.map((row) => row.name));
   }
 
   const row = rows[0];
@@ -76,7 +74,7 @@ export const doAdd = async (
 
 export const add: Action = {
   match: /^\/add[\s]+/,
-  cmd: "/add <bias>",
+  cmd: "/add bias",
   description: "Add a group or soloist as a bias",
   async handler(message, conversation) {
     const bias = message.text.replace(add.match, "").trim();

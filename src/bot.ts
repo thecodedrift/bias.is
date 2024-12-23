@@ -19,6 +19,7 @@ import { list } from "./actions/list.js";
 import { search } from "./actions/search.js";
 import { suggest } from "./actions/suggest.js";
 import { hi, messageWelcome } from "./actions/hi.js";
+import { UserError } from "./errors/core.js";
 
 const actions = [hi, help, add, ult, list, search, suggest, reset, admin];
 
@@ -136,6 +137,13 @@ bot.on("message", async (message: ChatMessage) => {
         getActions: () => validActions,
       });
     } catch (err) {
+      if (err instanceof UserError) {
+        await conversation.sendMessage({
+          text: err.message,
+        });
+        return;
+      }
+
       console.error(err);
       await conversation.sendMessage({
         text: "Encountered an error. Give us a moment to recover.",

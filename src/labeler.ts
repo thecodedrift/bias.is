@@ -14,6 +14,7 @@ import {
 import { LabelerServer } from "@skyware/labeler";
 import { db } from "./db.js";
 import { toIdentifier } from "./util/toIdentifier.js";
+import { TooManyLabelsError } from "./errors/overlabeled.js";
 
 export class MaxLabelsExceededError extends Error {
   constructor() {
@@ -122,7 +123,7 @@ export const addUserLabel = async (did: string, label: Label) => {
   const active = await getUserLabels(did);
 
   if (active.length >= MAXLABELS) {
-    throw new MaxLabelsExceededError();
+    throw new TooManyLabelsError(label.name);
   }
 
   // create the label on atproto

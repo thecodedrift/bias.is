@@ -71,12 +71,12 @@ export const search: Action = {
     await conversation.sendMessage({
       text: dedent`
         Search results for: ${searchValue}
-        <group> (<fanclub>)
+        idol (fanclub)
 
         ${rows.join("\n")}
 
-        Select a bias by typing:
-        /add <name>
+        Add a bias by typing:
+        /add name
       `,
     });
   },
