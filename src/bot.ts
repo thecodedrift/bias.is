@@ -4,14 +4,13 @@ import {
   IncomingChatPreference,
   Labeler,
 } from "@skyware/bot";
-import dedent from "dedent";
 import { to } from "await-to-js";
 import {
   getStoredSession,
   setStoredSession,
 } from "./labeler.js";
 import { ADMINS, DID, HANDLE, LABELER_PASSWORD } from "./constants.js";
-import { help, messageHelp, messageWelcome } from "./actions/help.js";
+import { help } from "./actions/help.js";
 import { reset } from "./actions/reset.js";
 import { add } from "./actions/add.js";
 import { ult } from "./actions/ult.js";
@@ -19,8 +18,9 @@ import { admin } from "./actions/admin.js";
 import { list } from "./actions/list.js";
 import { search } from "./actions/search.js";
 import { suggest } from "./actions/suggest.js";
+import { hi, messageWelcome } from "./actions/hi.js";
 
-const actions = [help, add, ult, list, search, suggest, reset, admin];
+const actions = [hi, help, add, ult, list, search, suggest, reset, admin];
 
 const defaultAction = help;
 
@@ -81,18 +81,8 @@ bot.on("like", async ({ subject, user }) => {
       return;
     }
 
-    const list = actions
-      .filter((action) => action.admin !== true)
-      .map((action) => `${action.cmd} - ${action.description}`)
-      .join("\n");
-
     await conversation.sendMessage({
-      text: dedent`
-        ${messageWelcome}
-
-        ${messageHelp}
-        ${list}
-      `,
+      text: messageWelcome
     });
   } catch (error) {
     onBotError(error);

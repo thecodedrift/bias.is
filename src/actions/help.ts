@@ -1,10 +1,6 @@
 import dedent from "dedent";
 import { Action } from "./action.js";
-
-export const messageWelcome = "Welcome to the bias.is labeler!";
-
-export const messageHelp =
-  "To get started, type /search followed by the name of your bias. For example, /search BTS. Or just skip straight to these other commands:";
+import { messageWelcome } from "./hi.js";
 
 export const help: Action = {
   match: /^\/help$/,
@@ -20,9 +16,9 @@ export const help: Action = {
 
     conversation.sendMessage({
       text: dedent`
-        ${messageHelp}
+        Supported commands:
         ${list}
-      `,
+      `
     });
   },
 };
