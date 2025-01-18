@@ -6,8 +6,8 @@ import { doList } from "./list.js";
 
 export const ult: Action = {
   match: /^\/ult[\s]+/,
-  cmd: "/ult bias",
-  description: 'Add a group or soloist as your "ultimate" bias (max 1)',
+  cmd: "/ult",
+  description: `Add a group or soloist as your "ultimate" bias (max ${MAX_ULTS})`,
   async handler(message, conversation) {
     const bias = message.text.replace(ult.match, "").trim();
     const { ult: ultList } = await doList(message.senderDid);

@@ -12,7 +12,7 @@ export const help: Action = {
     const list = actions
       .filter((action) => action.admin !== true)
       .map((action) => `${action.cmd} - ${action.description}`)
-      .join("\n");
+      .join("\n\n");
 
     conversation.sendMessage({
       text: dedent`

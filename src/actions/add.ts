@@ -5,6 +5,7 @@ import { At } from "@atcute/client/lexicons";
 import dedent from "dedent";
 import { BiasNotFoundError } from "../errors/notfound.js";
 import { AmbiguousBiasError } from "../errors/ambiguous.js";
+import { MAX_LABELS } from "../constants.js";
 
 export type Label = {
   name: string;
@@ -81,8 +82,8 @@ export const doAdd = async (
 
 export const add: Action = {
   match: /^\/add[\s]+/,
-  cmd: "/add bias",
-  description: "Add a group or soloist as a bias",
+  cmd: "/add",
+  description: `Add a group or soloist as a bias (max: ${MAX_LABELS})`,
   async handler(message, conversation) {
     const bias = message.text.replace(add.match, "").trim();
     const result = await doAdd(message.senderDid, bias);

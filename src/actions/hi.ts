@@ -2,15 +2,16 @@ import dedent from "dedent";
 import { Action } from "./action.js";
 
 export const messageWelcome = dedent`
-To get started, type /search followed by the name of your bias.
-For example, /search BTS
-
-To add a bias once you have their name, type /add followed by the bias name.
+To add a bias, type /add followed by the name of your bias.
 For example, /add LOONA
 
-You can also add an ult in the same way: /ult ATEEZ
+If you're not sure their name you can type /search, followed by your group or their fandom name.
+For example, /search BTS
 
-Typing /help will show you all the commands.
+Finally, if they're your ult, you can use /ult instead of /all to mark them as your ultimate bias.
+For example, /ult ATEEZ
+
+There's more you can do too. /help will show you all the commands.
 `;
 
 export const hi: Action = {
