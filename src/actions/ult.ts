@@ -1,3 +1,4 @@
+import { MAX_ULTS } from "../constants.js";
 import { TooManyUlts } from "../errors/overlabeled.js";
 import { Action } from "./action.js";
 import { doAdd } from "./add.js";
@@ -11,7 +12,7 @@ export const ult: Action = {
     const bias = message.text.replace(ult.match, "").trim();
     const { ult: ultList } = await doList(message.senderDid);
 
-    if (ultList.length > 0) {
+    if (ultList.length >= MAX_ULTS) {
       throw new TooManyUlts()
     }
 

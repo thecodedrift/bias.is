@@ -6,7 +6,7 @@ import {
 import {
   DID,
   PORT,
-  MAXLABELS,
+  MAX_LABELS,
   SIGNING_KEY,
   LABELER_PASSWORD,
   DB_PATH,
@@ -122,7 +122,7 @@ export const addUserLabel = async (did: string, label: Label) => {
   // get current labels
   const active = await getUserLabels(did);
 
-  if (active.length >= MAXLABELS) {
+  if (active.length >= MAX_LABELS) {
     throw new TooManyLabelsError(label.name);
   }
 

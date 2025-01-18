@@ -37,7 +37,7 @@ export const doSearch = async (search: string, options:SearchOptions) => {
   }
 
   const results = rows.map((row) => {
-    const fanclub = row.fanclub ? `(${row.fanclub})` : "";
+    const fanclub = row.fanclub ? `(fandom: ${row.fanclub})` : "";
     return `${row.name} ${fanclub}`.trim();
   });
 

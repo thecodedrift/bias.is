@@ -17,17 +17,17 @@ type AddOptions = {
 
 export const ultToName = (name: string) => {
   return name.replace(/^💖\s/, "");
-}
+};
 
 export const nameToUlt = (name: string) => {
   return `💖 ${name}`;
-}
+};
 
 /**
  * convert a kpop db row to a label
  */
 export const rowToLabel = (row: any, ult?: boolean): Label => {
-  const biasName = ult ? nameToUlt(row.name) : row.name as string;
+  const biasName = ult ? nameToUlt(row.name) : (row.name as string);
   const ultLine = ult ? "...in fact, it's their 💖 ult~" : "";
   const biasDescription = dedent`
     ${row.fanclub ? `${row.fanclub}\n` : ""}User is a fan of ${row.name}
@@ -38,7 +38,7 @@ export const rowToLabel = (row: any, ult?: boolean): Label => {
     name: biasName,
     description: biasDescription,
   };
-}
+};
 
 /**
  * add labels to a given DID
@@ -48,7 +48,11 @@ export const doAdd = async (
   bias: string,
   options?: AddOptions
 ) => {
-  const search = bias.replace(/^"/, "").replace(/"$/, "");
+  const search = bias
+    .replace(/^"/, "")
+    .replace(/"$/, "")
+    .replace(/\(fandom:[\s]+.+?\)/, "")
+    .trim();
   const stmt = await kpopdb.prepare(
     `select * from app_kpop_group where NAME like ? AND is_collab = "n" limit 2;`,
     search
@@ -61,7 +65,10 @@ export const doAdd = async (
 
   // also error for two results, ambiguous
   if (rows.length > 1) {
-    throw new AmbiguousBiasError(bias, rows.map((row) => row.name));
+    throw new AmbiguousBiasError(
+      bias,
+      rows.map((row) => row.name)
+    );
   }
 
   const row = rows[0];
