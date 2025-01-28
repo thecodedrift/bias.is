@@ -1,16 +1,10 @@
 import { Action } from "./action.js";
 import { kpopdb } from "../db.js";
-import { addUserLabel } from "../labeler.js";
+import { addUserLabel, type Label } from "../labeler.js";
 import { At } from "@atcute/client/lexicons";
 import dedent from "dedent";
 import { BiasNotFoundError } from "../errors/notfound.js";
-import { AmbiguousBiasError } from "../errors/ambiguous.js";
 import { MAX_LABELS } from "../constants.js";
-
-export type Label = {
-  name: string;
-  description: string;
-};
 
 type AddOptions = {
   ult?: boolean;
@@ -64,18 +58,15 @@ export const doAdd = async (
     throw new BiasNotFoundError(bias);
   }
 
-  // also error for two results, ambiguous
-  if (rows.length > 1) {
-    throw new AmbiguousBiasError(
-      bias,
-      rows.map((row) => row.name)
-    );
-  }
-
   const row = rows[0];
 
   const labelData = rowToLabel(row, options?.ult);
   const label = await addUserLabel(did, labelData);
+
+  // also error for two results, ambiguous
+  if (rows.length > 1) {
+    label.ambiguous = true;
+  }
 
   return label;
 };
@@ -92,5 +83,11 @@ export const add: Action = {
     await conversation.sendMessage({
       text: `❤️ Got you. ${result.name} is now your bias~`,
     });
+
+    // if (result.ambiguous) {
+    //   await conversation.sendMessage({
+    //     text: `Just a heads up, more than one artist goes by the name "${bias}".`,
+    //   });
+    // }
   },
 };

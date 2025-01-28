@@ -42,6 +42,7 @@ const credentials = {
 export type Label = {
   name: string;
   description: string;
+  ambiguous?: boolean;
 };
 
 type Options = {
