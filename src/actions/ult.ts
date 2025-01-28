@@ -22,7 +22,7 @@ export const ult: Action = {
 
     console.log(`LABEL ULT: ${message.senderDid} ult ${result.name}`);
     await conversation.sendMessage({
-      text: `💖 Got you. ${result.name} is now marked as your favorite group~`,
+      text: `💖 Got you. ${result.name} is now marked as your favorite~`,
     });
   },
 };
