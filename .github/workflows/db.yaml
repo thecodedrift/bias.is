@@ -31,6 +31,12 @@ jobs:
           version: 9
           node-version: 20
           run_install: true
+      - name: Install JRE
+        uses: actions/setup-java@v4
+        with:
+        distribution: 'temurin' # See 'Supported distributions' for available options
+        java-package: jre
+        java-version: '21'
       - name: Run mysql2db script & create new DB
         run: pnpm tsx ./scripts/mysql2db.ts
         env:

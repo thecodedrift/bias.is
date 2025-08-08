@@ -15,7 +15,7 @@ import unzipper from "unzipper";
 import { rimrafSync } from "rimraf";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
-import { mysql2sqlite } from "../src/vendor/mysql2sqlite.js";
+import { execaSync } from "execa";
 
 // do not attempt to fetch without a valid soridata key,
 // or you will get banned you've been warned.
@@ -24,6 +24,7 @@ const SORIDATA_CONTACT = process.env.SORIDATA_CONTACT;
 const SORIDATA_URL = "https://soridata.com/download.php";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const scriptdir = resolve(__dirname, "../scripts");
 const tmpdir = resolve(__dirname, "../tmp");
 const targetdir = resolve(__dirname, "../db");
 const soridataAlreadyExists = existsSync(resolve(tmpdir, "dbdownload.zip"));
@@ -62,51 +63,59 @@ if (!existsSync(resolve(tmpdir, "dbdownload.zip"))) {
   process.exit(0);
 }
 
+// remove all files from the tmpdir that are not dbdownload.zip
+const toClean = readdirSync(tmpdir);
+for (const file of toClean) {
+  if (file !== "dbdownload.zip") {
+    const filePath = resolve(tmpdir, file);
+    if (existsSync(filePath)) {
+      console.log(`Removing file: ${filePath}`);
+      rimrafSync(filePath);
+    }
+  }
+}
+
 // open and extract the sql dump
 console.log("Extracting dbdownload.zip");
 const zipdir = await unzipper.Open.file(resolve(tmpdir, "dbdownload.zip"));
 await zipdir.extract({ path: tmpdir });
 
 // find the mainbackup file
-const files = readdirSync(tmpdir);
-const backupFile = files.find((file) => file.match(/^mainbackup_.*\.sql$/));
-const outputFile = resolve(tmpdir, "output.sql");
+let files = readdirSync(tmpdir);
+const backupFile = files.find(
+  (file) => file.match(/^mainbackup_.*\.sql$/) && !file.includes("sqlite")
+);
 
-if (backupFile) {
+const backupRead = backupFile ? resolve(tmpdir, backupFile) : undefined;
+
+// move the file to a
+if (backupFile || !backupRead) {
   console.log(`Found backup file: ${backupFile}`);
 } else {
   console.log("No backup file found.");
   process.exit(1);
 }
 
-// read the file into memory
-console.log("Reading backup file");
-const contents = readFileSync(resolve(tmpdir, backupFile), "utf-8");
+// convert the backup file to sqlite using execa
+const convertAction = execaSync`${scriptdir}/convert.sh ${backupRead}`;
 
-// grab the table and insert sections
-console.log("Parsing backup file");
-const createTable =
-  contents.match(/(CREATE TABLE `app_kpop_group` [\s\S]+?;)/gm)?.[0] ?? "";
-const insertValues =
-  contents.match(/(INSERT INTO app_kpop_group [\s\S]+?)\r?\n--/gm)?.[0] ?? "";
+// refresh dir
+files = readdirSync(tmpdir);
 
-// write to outputFile
-console.log("Writing output file");
-const combinedOutput = `${createTable}\n\n${insertValues}`;
-writeFileSync(outputFile, combinedOutput, "utf8");
+const convertedFile = files.find((file) =>
+  file.match(/^mainbackup_.*\.sqlite.sql$/)
+);
 
-// convert to sqlite
-console.log("Converting to SQLite");
-const sqlite = mysql2sqlite(combinedOutput);
+if (!convertedFile) {
+  console.log("No converted file found.");
+  process.exit(1);
+}
 
-// write to sqlite.sql
-console.log("Writing SQLite file");
-writeFileSync(resolve(tmpdir, "sqlite.sql"), sqlite);
+// read the converted file into memory
+console.log("Reading converted file");
+const sqlite = readFileSync(resolve(tmpdir, convertedFile), "utf-8");
 
-// open the sqlite db
-console.log("Opening SQLite database");
 rimrafSync(resolve(tmpdir, "kpop.db"));
-
 const db = await open({
   filename: resolve(tmpdir, "kpop.db"),
   driver: sqlite3.Database,
@@ -118,3 +127,45 @@ console.log("Replacing kpop.db");
 renameSync(resolve(tmpdir, "kpop.db"), resolve(targetdir, "kpop.db"));
 
 console.log("Done");
+
+process.exit(0);
+
+// // read the file into memory
+// console.log("Reading backup file");
+// const contents = readFileSync(resolve(tmpdir, backupFile), "utf-8");
+
+// // grab the table and insert sections
+// console.log("Parsing backup file");
+// const createTable =
+//   contents.match(/(CREATE TABLE `app_kpop_group` [\s\S]+?;)/gm)?.[0] ?? "";
+// const insertValues =
+//   contents.match(/(INSERT INTO app_kpop_group [\s\S]+?)\r?\n--/gm)?.[0] ?? "";
+
+// // write to outputFile
+// console.log("Writing output file");
+// const combinedOutput = `${createTable}\n\n${insertValues}`;
+// writeFileSync(outputFile, combinedOutput, "utf8");
+
+// // convert to sqlite
+// console.log("Converting to SQLite");
+// const sqlite = mysql2sqlite(combinedOutput);
+
+// // write to sqlite.sql
+// console.log("Writing SQLite file");
+// writeFileSync(resolve(tmpdir, "sqlite.sql"), sqlite);
+
+// // open the sqlite db
+// console.log("Opening SQLite database");
+// rimrafSync(resolve(tmpdir, "kpop.db"));
+
+// const db = await open({
+//   filename: resolve(tmpdir, "kpop.db"),
+//   driver: sqlite3.Database,
+// });
+// await db.exec(sqlite);
+// await db.close();
+
+// console.log("Replacing kpop.db");
+// renameSync(resolve(tmpdir, "kpop.db"), resolve(targetdir, "kpop.db"));
+
+// console.log("Done");
