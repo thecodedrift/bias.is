@@ -14,6 +14,7 @@
     "@types/sprintf-js": "1.1.4",
     "@types/unescape-js": "^1.0.3",
     "@types/unzipper": "^0.10.10",
+    "csv-parse": "^6.1.0",
     "mkdirp": "^3.0.1",
     "prettier": "^3.3.3",
     "rimraf": "^6.0.1",

@@ -1,10 +1,10 @@
 import { Action } from "./action.js";
-import { kpopdb } from "../db.js";
 import { addUserLabel, type Label } from "../labeler.js";
 import { At } from "@atcute/client/lexicons";
 import dedent from "dedent";
 import { BiasNotFoundError } from "../errors/notfound.js";
 import { MAX_LABELS } from "../constants.js";
+import { getInstance } from "../db/csv.js";
 
 type AddOptions = {
   ult?: boolean;
@@ -48,25 +48,38 @@ export const doAdd = async (
     .replace(/"$/, "")
     .replace(/\(fandom:[\s]+.+?\)/, "")
     .trim();
-  const stmt = await kpopdb.prepare(
-    `select * from app_kpop_group where NAME like ? AND is_collab = "n" limit 2;`,
-    search
-  );
-  const rows = await stmt.all();
 
-  if (rows.length === 0) {
+  const artists = await getInstance();
+
+  // search order:
+  // 1. full name (if solo) - case insensitive
+  // 2. name - case insensitive
+  // 3. hangul - exact
+
+  const fullNameMatch = artists.find(
+    (a) => a["full name (if solo)"].toLowerCase() === search.toLowerCase()
+  );
+
+  const nameMatch = artists.find(
+    (a) => a.name.toLowerCase() === search.toLowerCase()
+  );
+
+  const hangulMatch = artists.find((a) => a.hangul === search);
+
+  const artist = fullNameMatch ?? nameMatch ?? hangulMatch;
+
+  if (!artist) {
     throw new BiasNotFoundError(bias);
   }
 
-  const row = rows[0];
+  const originalName = artist.name;
+  artist.name =
+    artist["full name (if solo)"] !== ""
+      ? artist["full name (if solo)"]
+      : artist.name;
 
-  const labelData = rowToLabel(row, options?.ult);
+  const labelData = rowToLabel(artist, options?.ult);
   const label = await addUserLabel(did, labelData);
-
-  // also error for two results, ambiguous
-  if (rows.length > 1) {
-    label.ambiguous = true;
-  }
 
   return label;
 };
@@ -81,7 +94,7 @@ export const add: Action = {
 
     console.log(`LABEL ADD: ${message.senderDid} added ${result.name}`);
     await conversation.sendMessage({
-      text: `❤️ Got you. ${result.name} is now your bias~`,
+      text: `❤️ Got you. ${result.name} is now your bias (if this is wrong, you might need to /search and get their full name)~`,
     });
 
     // if (result.ambiguous) {

@@ -1,47 +1,65 @@
 import dedent from "dedent";
-import { kpopdb } from "../db.js";
 import { Action } from "./action.js";
+import { getInstance } from "../db/csv.js";
 
 type SearchOptions = {
-  exact?: boolean
-  raw?: boolean
-  limit?: number
-}
+  exact?: boolean;
+  raw?: boolean;
+  limit?: number;
+};
 
 /**
  * Search kpop db for a bias
  */
-export const doSearch = async (search: string, options:SearchOptions) => {
+export const doSearch = async (search: string, options: SearchOptions) => {
   const { exact = false, limit = 5 } = options;
 
-  const exactSearch = await kpopdb.prepare(
-    `SELECT * from app_kpop_group where name = ? AND is_collab = "n" LIMIT ${limit}`,
-    search.replace(/^"/, "").replace(/"$/, "")
+  const artists = await getInstance();
+
+  const exactSolo = artists.find(
+    (artist) =>
+      artist["solo/group"] === "solo" &&
+      artist["full name (if solo)"].toLowerCase() === search.toLowerCase()
   );
 
-  const looseSearch = await kpopdb.prepare(
-    `SELECT * from app_kpop_group where (name like ? or fanclub like ? or alias like ? or fname like ?) AND is_collab = "n" LIMIT ${limit}`,
-    `%${search}%`,
-    `%${search}%`,
-    `%${search}%`,
-    `%${search}%`
+  const exactGroup = artists.find(
+    (artist) => artist.name.toLowerCase() === search.toLowerCase()
   );
 
-  const stmt = (exact || search.startsWith('"')) ? exactSearch : looseSearch;
+  // approximate matches are the first n matches on name, hangul, fanclub, and solo full name
+  // do a contains check for lightweight fuzzy matching
+  const looseMatches = artists
+    .filter((artist) => {
+      const lowerSearch = search.toLowerCase();
+      return (
+        artist.name.toLowerCase().includes(lowerSearch) ||
+        artist.hangul === search ||
+        artist["full name (if solo)"].toLowerCase().includes(lowerSearch) ||
+        artist["fanclub name"].toLowerCase().includes(lowerSearch)
+      );
+    })
+    .slice(0, limit);
 
-  const rows = await stmt.all();
-  // TODO: there are no types for kpopdb. We should generate those...
+  const rows = (
+    exact ? [exactSolo ?? exactGroup] : [exactSolo, exactGroup, ...looseMatches]
+  )
+    .filter((v) => v !== undefined)
+    .slice(0, limit);
 
   if (options.raw) {
-    return rows;
+    return [...new Set(rows)];
   }
 
   const results = rows.map((row) => {
-    const fanclub = row.fanclub ? `(fandom: ${row.fanclub})` : "";
-    return `${row.name} ${fanclub}`.trim();
+    const useName =
+      row["full name (if solo)"] !== "" ? row["full name (if solo)"] : row.name;
+    const fanclub = row["fanclub name"]
+      ? `(fandom: ${row["fanclub name"]})`
+      : "";
+    return `${useName} ${fanclub}`.trim();
   });
 
-  return results;
+  return [...new Set(results)];
 };
 
 export const search: Action = {
@@ -51,7 +69,7 @@ export const search: Action = {
   async handler(message, conversation) {
     const searchValue = message.text.replace(search.match, "").trim();
     const rows = await doSearch(searchValue, {
-      limit: 6
+      limit: 6,
     });
 
     if (rows.length === 0) {
@@ -61,9 +79,10 @@ export const search: Action = {
       return;
     }
 
+    let andMore = false;
     if (rows.length > 5) {
       rows.pop();
-      rows.push("... and more");
+      andMore = true;
     }
 
     console.log(`SEARCH: ${message.senderDid} query ${searchValue}`);
@@ -74,7 +93,7 @@ export const search: Action = {
         idol (fanclub)
 
         ${rows.join("\n")}
-
+        ${andMore ? "And more...\n" : ""}
         Add a bias by typing:
         /add name
       `,
