@@ -1,27 +1,33 @@
 import dedent from "dedent";
-import { kpopdb } from "../db.js";
-import { KpopDbRow } from "../db/kpopdb.types.js";
+import { getInstance } from "../db/csv.js";
 
 export const selectBias = async (bias: string) => {
-  const search = bias.replace(/^"/, "").replace(/"$/, "");
-  const stmt = await kpopdb.prepare(
-    `select * from app_kpop_group where NAME like ? AND is_collab = "n" limit 2;`,
-    search
-  );
-  const rows = await stmt.all<KpopDbRow[]>();
+  const artists = await getInstance();
 
-  if (rows.length === 0) {
+  const solo = artists.filter(
+    (a) =>
+      a["solo/group"] === "solo" &&
+      a["full name (if solo)"].toLowerCase() === bias.toLowerCase()
+  );
+
+  const group = artists.filter(
+    (a) => a.name.toLowerCase() === bias.toLowerCase()
+  );
+
+  const all = [...solo, ...group].filter((v) => v !== undefined);
+
+  if (all.length === 0) {
     return undefined;
   }
 
   // also error for two results, ambiguous
-  if (rows.length > 1) {
+  if (all.length > 1) {
     throw new Error(dedent`
-      Ambiguous bias for "${bias}" found: ${rows.map((row) => row.name).join(", ")}
+      Ambiguous bias for "${bias}" found: ${all.map((row) => (row["full name (if solo)"] !== "" ? row["full name (if solo)"] : row.name)).join(", ")}
 
       Try searching with /search to get their exact name
     `);
   }
 
-  return rows[0];
+  return all[0];
 };
