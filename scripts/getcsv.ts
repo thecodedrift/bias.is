@@ -6,15 +6,13 @@ import {
   createReadStream,
   existsSync,
   readdirSync,
-  readFileSync,
-  renameSync,
   writeFileSync,
 } from "fs";
+import { createInterface } from "readline";
 import { fileURLToPath } from "url";
 import { mkdirpSync } from "mkdirp";
 import unzipper from "unzipper";
 import { rimrafSync } from "rimraf";
-import { parse } from "csv-parse";
 
 // do not attempt to fetch without a valid soridata key,
 // or you will get banned you've been warned.
@@ -80,25 +78,205 @@ console.log("Extracting");
 const zipdir = await unzipper.Open.file(resolve(tmpdir, ZIPFILE));
 await zipdir.extract({ path: tmpdir });
 
-console.log("Parsing CSV");
-const records = [];
-const parser = createReadStream(resolve(tmpdir, "korean_artists.csv")).pipe(
-  parse({
-    // Configure CSV parsing options here, e.g.:
-    columns: true, // Treat the first row as column headers
-    ltrim: true, // Remove surrounding whitespace
-    rtrim: true,
-    skip_empty_lines: true,
-  })
-);
+// find the main backup file, it ends in .sql and is mysql format
+const sqlFiles = readdirSync(tmpdir).filter((f) => f.endsWith(".sql"));
+if (sqlFiles.length === 0) {
+  console.log("No .sql file found in extracted data.");
+  process.exit(1);
+}
+const sqlFileName = sqlFiles[0]!;
+const sqlFile = resolve(tmpdir, sqlFileName);
+console.log(`Parsing SQL dump: ${sqlFileName}`);
 
-for await (const record of parser) {
-  records.push(record);
+const COLUMNS = [
+  "id",
+  "is_collab",
+  "artiststyle",
+  "name",
+  "kname",
+  "previous_name",
+  "previous_kname",
+  "fname",
+  "alias",
+  "members",
+  "issolo",
+  "id_parentgroup",
+  "formation",
+  "disband",
+  "fanclub",
+  "id_debut",
+  "debut_date",
+  "date_birth",
+  "is_deceased",
+  "sales",
+  "releases",
+  "awards",
+  "views",
+  "pak_total",
+  "gaondigital_times",
+  "gaondigital_firsts",
+  "yawards_total",
+  "social",
+  "melonid",
+  "mslevel",
+];
+
+/** Parse the comma-separated values inside a MySQL VALUES tuple. */
+function parseMySQLValues(inner: string): (string | number | null)[] {
+  const values: (string | number | null)[] = [];
+  let i = 0;
+
+  while (i < inner.length) {
+    // skip whitespace
+    while (i < inner.length && inner[i] === " ") i++;
+    if (i >= inner.length) break;
+
+    if (inner[i] === "N" || inner[i] === "n") {
+      // NULL
+      if (inner.substring(i, i + 4).toLowerCase() === "null") {
+        values.push(null);
+        i += 4;
+      }
+    } else if (inner[i] === '"' || inner[i] === "'") {
+      // quoted string
+      const quote = inner[i];
+      i++;
+      let value = "";
+      while (i < inner.length) {
+        if (inner[i] === "\\") {
+          i++;
+          if (i < inner.length) {
+            switch (inner[i]) {
+              case "n":
+                value += "\n";
+                break;
+              case "r":
+                value += "\r";
+                break;
+              case "t":
+                value += "\t";
+                break;
+              case "0":
+                value += "\0";
+                break;
+              default:
+                value += inner[i];
+                break;
+            }
+          }
+          i++;
+        } else if (inner[i] === quote) {
+          // '' or "" is an escaped quote within the string
+          if (i + 1 < inner.length && inner[i + 1] === quote) {
+            value += quote;
+            i += 2;
+          } else {
+            i++; // closing quote
+            break;
+          }
+        } else {
+          value += inner[i];
+          i++;
+        }
+      }
+      values.push(value);
+    } else {
+      // unquoted value (number)
+      let numStr = "";
+      while (i < inner.length && inner[i] !== ",") {
+        numStr += inner[i];
+        i++;
+      }
+      numStr = numStr.trim();
+      const num = Number(numStr);
+      values.push(isNaN(num) ? numStr : num);
+    }
+
+    // skip comma separator
+    while (i < inner.length && inner[i] === " ") i++;
+    if (i < inner.length && inner[i] === ",") i++;
+  }
+
+  return values;
 }
 
+const records: Record<string, any>[] = [];
+const INSERT_PREFIX = "INSERT INTO app_kpop_group VALUES ";
+let inInsert = false;
+
+const rl = createInterface({
+  input: createReadStream(sqlFile),
+  crlfDelay: Infinity,
+});
+
+for await (const line of rl) {
+  let tupleLine: string;
+
+  if (line.startsWith(INSERT_PREFIX)) {
+    inInsert = true;
+    tupleLine = line.substring(INSERT_PREFIX.length);
+  } else if (inInsert && line.startsWith("(")) {
+    tupleLine = line;
+  } else {
+    inInsert = false;
+    continue;
+  }
+
+  // extract content between outermost ( and )
+  const start = tupleLine.indexOf("(");
+  const end = tupleLine.lastIndexOf(")");
+  if (start === -1 || end === -1 || end <= start) continue;
+
+  const inner = tupleLine.substring(start + 1, end);
+  const values = parseMySQLValues(inner);
+
+  if (values.length !== COLUMNS.length) {
+    console.warn(
+      `Warning: expected ${COLUMNS.length} columns, got ${values.length} for id=${values[0]}`
+    );
+    continue;
+  }
+
+  const record: Record<string, any> = {};
+  for (let j = 0; j < COLUMNS.length; j++) {
+    record[COLUMNS[j]!] = values[j];
+  }
+  records.push(record);
+
+  if (tupleLine.trimEnd().endsWith(");")) {
+    inInsert = false;
+  }
+}
+
+console.log(`Parsed ${records.length} artists from SQL dump`);
+
+const artists = records.map((r) => ({
+  id: String(r.id),
+  name: r.name,
+  hangul: r.kname,
+  "solo/group": r.issolo === "y" ? "solo" : "group",
+  "date of birth (if solo)": r.issolo === "y" ? (r.date_birth ?? "") : "",
+  "member gender (or soloist gender)": r.members,
+  "full name (if solo)": r.issolo === "y" ? r.fname : "",
+  "debut video ID": String(r.id_debut ?? ""),
+  "debut date": r.debut_date ?? "",
+  "disband date": r.disband,
+  "fanclub name": r.fanclub ?? "",
+  "sales (circle)": String(r.sales),
+  views: String(r.views),
+  "circle streaming number of times charted (weekly)": String(
+    r.gaondigital_times
+  ),
+  "circle streaming first places (weekly)": String(r.gaondigital_firsts),
+  "music show awards": String(r.awards),
+  "yearly awards": String(r.yawards_total),
+  paks: String(r.pak_total),
+}));
+
+console.log("Sample:", artists[0]);
+
 console.log("Writing artist data");
-// write the JSON to artists.json
 writeFileSync(
   resolve(targetdir, "artists.json"),
-  JSON.stringify(records, null, 2)
+  JSON.stringify(artists, null, 2)
 );
